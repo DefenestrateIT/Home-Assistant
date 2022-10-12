@@ -25,6 +25,7 @@ blueprint:
   \ This Blueprint is Inspired & Writen in loving annoyance to having to set up my mother; I.e. Robyn's system \
   \ on her birthday the 8th of Oct, and in the hope she will be inspired to learn how to do it for her self\
   \ (As she is an old school coder, [& still wickedly coding] who always saying she loves programming) & so should U!"
+  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/main/Adaptive%20Lighting%20with%20color-loop%20Blueprint-Script%20V.2.0.2.1%20the%20fith%20year.yaml
   domain: script
   
   input:
@@ -43,14 +44,26 @@ blueprint:
           domain: input_select
     profile_adaptive_input_switch:
       name: Profile - Adaptive - input_boolean (Toggle)
-      description: The Light.Turn_On Adaptive Profile Night-Light Time Switch.
+      description: The Adaptive Profile Night-Light Time Switch, is used to switch the Night-Light profile on.
       selector:
         entity:
           domain: input_boolean
+    profile_circadian_bed_time:
+      name: Profile - Circadian - Bed Time
+      description: The Circadian Profile Night-Light Time, is used as a time to transition to Night Light.
+      default: '22:30:00'
+      selector:
+        time:
+    profile_circadian_wake_up_time:
+      name: Profile - Circadian - Wake Up Time
+      description: The Circadian Profile Wake Up Time, is used as a time to transition to Dimmed or Bright Light; depending on Sunrise time.
+      default: '6:30:00'
+      selector:
+        time:
     transition_on:
       name: Turn On Light Transition Time
-      description: The Light.Turn_On Transition Time.
-      default: 3
+      description: The Light.Turn_On Transition Time, for when a Light is off & is being turned on.
+      default: 0
       selector:
         number:
           min: 0.0
@@ -59,8 +72,8 @@ blueprint:
           step: 1.0
     transition_change:
       name: Change Light Transition Time
-      description: The Light.Turn_On Transition Time, when one or more light/s are already on.
-      default: 180
+      description: The Light.Turn_On Transition Time, is used when the lights are already on & the profile is being changed.
+      default: 9
       selector:
         number:
           min: 0.0
@@ -69,7 +82,7 @@ blueprint:
           step: 1.0
     profile_colour_loop_transition_time:
       name: Profile - Colour Loop - Transition Time
-      description: The Colour Loop Profile Light.Turn_On Transition Time between colours.
+      description: The Colour Loop Profile Light.Turn_On Transition Time between colour changes.
       default: 3
       selector:
         number:
@@ -77,18 +90,16 @@ blueprint:
           max: 300.0
           mode: slider
           step: 1.0
-    profile_circadian_bed_time:
-      name: Profile - Circadian - Bed Time
-      description: The Circadian Profile Night-Light Time.
-      default: '22:30:00'
+    flash_repeat:
+      name: Profile - Flash - Repeat Time
+      description: The Light.Turn_On Transition Time between Flashes (Not as good as i would like but uses the Flash effect to protect lights).
+      default: 2
       selector:
-        time:
-    profile_circadian_wake_up_time:
-      name: Profile - Circadian - Wake Up Time
-      description: The Circadian Profile Wake Up Time.
-      default: '6:30:00'
-      selector:
-        time:
+        number:
+          min: 2.0
+          max: 300.0
+          mode: slider
+          step: 1.0
     sun_before_offset:
       name: Sunrise - Offset
       description: Offset the sunrise time.
@@ -142,7 +153,7 @@ blueprint:
     profile_night_light_brightness:
       name: Profile - Night Light - Brightness
       description: The Night Light Profile light brightness.
-      default: 25
+      default: 15
       selector:
         number:
           min: 0.0
@@ -187,7 +198,7 @@ sequence:
         sequence:
           - if:
               - condition: template
-                value_template: "{{ is_state( 'lights' , 'on') }}"
+                value_template: "{{ is_state( 'lights.entity_id' , 'on') }}"
             then:
               - service: light.turn_on
                 data:
@@ -211,8 +222,7 @@ sequence:
         sequence:
           - if:
               - condition: template
-                value_template: >-
-                  {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
+                value_template: "{{ is_state( 'lights' , 'on') }}"
             then:
               - service: light.turn_on
                 data:
@@ -318,7 +328,7 @@ sequence:
                 - delay:
                     hours: 0
                     minutes: 0
-                    seconds: 3
+                    seconds: !input flash_repeat
                     milliseconds: 0
       - conditions:
           - condition: state
