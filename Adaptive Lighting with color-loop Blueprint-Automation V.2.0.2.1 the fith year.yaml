@@ -1,1 +1,147 @@
+blueprint:
+  name: Another light Blueprint-Automation
+  description: Turn on a light when motion is detected.
+  domain: automation
+  input:
+    motion_sensor:
+      name: Motion Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion
+    target_lights:
+      name: Targeted Lights
+      description: The Lights this Script is Targeted at.
+      selector:
+        target:
+          entity:
+            domain: light
+    input_select_switch:
+      name: input select Switch
+      description: On / Off / Auto
+      selector:
+        entity:
+          domain: input_select
+    lights_script:
+      name: Lights Script
+      description: The Script for the Lights.
+      selector:
+        entity:
+          domain: script
+    automations_off_switch:
+      name: Automations Off Switch
+      description: On / Off
+      selector:
+        entity:
+          domain: input_boolean
+    debug_switch:
+      name: Debug Switch
+      description: On / Off
+      selector:
+        entity:
+          domain: input_boolean
+    motion_cleared_time:
+      name: motion-cleared-time
+      description: something
+      default: 15
+      selector:
+        number:
+          min: 0.0
+          max: 90.0
+          mode: slider
+          step: 1.0
+    transition_off:
+      name: Transition Light Off Time
+      description: The Transition off Time in Seconds for lights.
+      default: 9
+      selector:
+        number:
+          min: 1.0
+          max: 300.0
+          mode: slider
+          step: 1.0
 
+# If motion is detected within the delay,
+# we restart the script.
+mode: restart
+max_exceeded: silent
+
+
+trigger:
+  - platform: state
+    entity_id:
+      - !input motion_sensor
+    to: "On"
+    id: Motion-Detected
+  - platform: state
+    entity_id:
+      - !input motion_sensor
+    to: "Off"
+    id: Motion-Cleared
+    for:
+      hours: 0
+      minutes: !input motion_cleared_time
+      seconds: 0
+  - platform: state
+    entity_id:
+      - !input input_select_switch
+    
+
+condition:
+  - condition: state
+    entity_id: !input automations_off_switch
+    state: 'off'
+    
+
+action:
+  - choose:
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input input_select_switch
+                state: 'Off'
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity_id: !input input_select_switch
+                    state: Auto
+                  - condition: trigger
+                    id: Motion-Cleared
+        sequence:
+          - service: light.turn_off
+            data: 
+              transition: !input transition_off
+            target:
+              !input target_lights
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input input_select_switch
+                state: 'On'
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity_id: !input input_select_switch
+                    state: 'Auto'
+                  - condition: trigger
+                    id: Motion-Detected
+        sequence:
+          - service: !input lights_script
+            data: {}
+
+          
+          
+            
+  - if:
+      - condition: state
+        entity_id: !input debug_switch
+        state: "on"
+    then:
+      - service: notify.notify
+        data:
+          message: >-
+            {{ trigger.id }} just changed from {{ trigger.from_state.state }} to
+            {{ trigger.to_state.state }} triggered by {{ trigger.entity_id }}
+          title: Test Automations Ran
