@@ -1,7 +1,8 @@
 blueprint:
   name: Another light Blueprint-Automation
-  description: Turn on a light when motion is detected.
   domain: automation
+  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/5b55096a84029f0f607da5651d166f4f564f2b34/Adaptive%20Lighting%20with%20color-loop%20Blueprint-Automation%20V.2.0.2.1%20the%20fith%20year.yaml
+  description: Light Automation Blueprint.
   input:
     motion_sensor:
       name: Motion Sensor
