@@ -162,7 +162,17 @@ blueprint:
           step: 1.0
           
 variables:
-  lights: !input 'target_lights'
+  lights: !input target_lights
+  lights_on: >-
+    {% if lights.device_id is defined %} {{ is_state ( device_entities (
+    lights.device_id ) | string , 'on' ) }} {% elif lights.entity_id is
+    defined %} {{ is_state ( lights.entity_id , 'on' ) }} {% else %} {{ expand
+    ( area_entities ( lights.area_id ) ) | selectattr ( 'domain' , 'eq' ,
+    'light' ) | selectattr ( 'state' , 'eq' , 'on' ) | list | count > 0 }} {%
+    endif %}
+  transition_on: !input transition_on
+  transition_change: !input transition_change
+  transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {%endif%}"
 
 sequence:
   - choose:
@@ -171,119 +181,63 @@ sequence:
             entity_id: !input profile_input_select
             state: Bright
         sequence:
-          - if:
-              - condition: template
-                value_template: >-
-                  {{ is_state( lights.entity_id , 'on') }}
-            then:
-              - service: light.turn_on
-                data:
-                  color_temp: !input profile_bright_color_temp
-                  brightness: !input profile_bright_brightness
-                  transition: !input transition_change
-                target:
-                  !input target_lights
-            else:
-              - service: light.turn_on
-                data:
-                  color_temp: !input profile_bright_color_temp
-                  brightness: !input profile_bright_brightness
-                  transition: !input transition_on
-                target:
-                  !input target_lights
+          - service: light.turn_on
+            data:
+              color_temp: !input profile_bright_color_temp
+              brightness: !input profile_bright_brightness
+              transition: "{{ transition }}"
+            target: !input target_lights
       - conditions:
           - condition: state
             entity_id: !input profile_input_select
             state: Dimmed
         sequence:
-          - if:
-              - condition: template
-                value_template: "{{ is_state( 'lights.entity_id' , 'on') }}"
-            then:
-              - service: light.turn_on
-                data:
-                  color_temp: !input profile_dimmed_color_temp
-                  brightness: !input profile_dimmed_brightness
-                  transition: !input transition_change
-                target:
-                  !input target_lights
-            else:
-              - service: light.turn_on
-                data:
-                  color_temp: !input profile_dimmed_color_temp
-                  brightness: !input profile_dimmed_brightness
-                  transition: !input transition_on
-                target:
-                  !input target_lights
+          - service: light.turn_on
+            data:
+              color_temp: !input profile_dimmed_color_temp
+              brightness: !input profile_dimmed_brightness
+              transition: "{{ transition }}"
+            target: !input target_lights
       - conditions:
           - condition: state
             entity_id: !input profile_input_select
             state: Night-Light
         sequence:
-          - if:
-              - condition: template
-                value_template: "{{ is_state( 'lights' , 'on') }}"
-            then:
-              - service: light.turn_on
-                data:
-                  color_temp: !input profile_night_light_color_temp
-                  brightness: !input profile_night_light_brightness
-                  transition: !input transition_change
-                target:
-                  !input target_lights
-            else:
-              - service: light.turn_on
-                data:
-                  color_temp: !input profile_night_light_color_temp
-                  brightness: !input profile_night_light_brightness
-                  transition: !input transition_on
-                target:
-                  !input target_lights
+          - service: light.turn_on
+            data:
+              color_temp: !input profile_night_light_color_temp
+              brightness: !input profile_night_light_brightness
+              transition: "{{ transition }}"
+            target: !input target_lights
       - conditions:
           - condition: state
             entity_id: !input profile_input_select
             state: Random
         sequence:
-          - if:
-              - condition: template
-                value_template: >-
-                  {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-            then:
-              - service: light.turn_on
-                data:
-                  hs_color:
-                    - "{{ range(360)|random }}"
-                    - 100
-                  transition: !input transition_change
-                target:
-                  !input target_lights
-            else:
-              - service: light.turn_on
-                data:
-                  hs_color:
-                    - "{{ range(360)|random }}"
-                    - 100
-                  transition: !input transition_on
-                target:
-                  !input target_lights
+          - service: light.turn_on
+            data:
+              hs_color:
+                - "{{ range(360)|random }}"
+                - 100
+              transition: "{{ transition }}"
+            target: !input target_lights
       - conditions:
           - condition: state
             entity_id: !input profile_input_select
             state: Colour-Loop
         sequence:
           - service: light.turn_on
-            data: 
+            data:
               hs_color:
                 - "{{ range(360)|random }}"
                 - 100
               brightness_pct: 100
               transition: !input profile_colour_loop_transition_time
-            target:
-              !input target_lights
+            target: !input target_lights
           - repeat:
               while:
                 - condition: template
-                  value_template: "{{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}"
+                  value_template: "{{ lights_on }}"
                 - condition: state
                   entity_id: !input profile_input_select
                   state: Colour-Loop
@@ -295,8 +249,7 @@ sequence:
                       - 100
                     brightness_pct: 100
                     transition: !input profile_colour_loop_transition_time
-                  target:
-                    !input target_lights
+                  target: !input target_lights
                 - delay:
                     hours: 0
                     minutes: 0
@@ -308,14 +261,13 @@ sequence:
             state: Flash
         sequence:
           - service: light.turn_on
-            data: 
+            data:
               transition: !input transition_on
-            target:
-              !input target_lights
+            target: !input target_lights
           - repeat:
               while:
                 - condition: template
-                  value_template: "{{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}"
+                  value_template: "{{ lights_on }}"
                 - condition: state
                   entity_id: !input profile_input_select
                   state: Flash
@@ -323,8 +275,7 @@ sequence:
                 - service: light.turn_on
                   data:
                     flash: short
-                  target:
-                    !input target_lights
+                  target: !input target_lights
                 - delay:
                     hours: 0
                     minutes: 0
@@ -341,26 +292,12 @@ sequence:
                     after: !input profile_circadian_bed_time
                     before: !input profile_circadian_wake_up_time
                 sequence:
-                  - if:
-                      - condition: template
-                        value_template: >-
-                          {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-                    then:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_night_light_color_temp
-                          brightness: !input profile_night_light_brightness
-                          transition: !input transition_change
-                        target:
-                          !input target_lights
-                    else:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_night_light_color_temp
-                          brightness: !input profile_night_light_brightness
-                          transition: !input transition_on
-                        target:
-                          !input target_lights
+                  - service: light.turn_on
+                    data:
+                      color_temp: !input profile_night_light_color_temp
+                      brightness: !input profile_night_light_brightness
+                      transition: "{{ transition }}"
+                    target: !input target_lights
               - conditions:
                   - condition: sun
                     before: sunset
@@ -368,47 +305,19 @@ sequence:
                     before_offset: !input sun_before_offset
                     after_offset: !input sun_after_offset
                 sequence:
-                  - if:
-                      - condition: template
-                        value_template: >-
-                          {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-                    then:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_bright_color_temp
-                          brightness: !input profile_bright_brightness
-                          transition: !input transition_change
-                        target:
-                          !input target_lights
-                    else:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_bright_color_temp
-                          brightness: !input profile_bright_brightness
-                          transition: !input transition_on
-                        target:
-                          !input target_lights
+                  - service: light.turn_on
+                    data:
+                      color_temp: !input profile_bright_color_temp
+                      brightness: !input profile_bright_brightness
+                      transition: "{{ transition }}"
+                    target: !input target_lights
             default:
-              - if:
-                  - condition: template
-                    value_template: >-
-                      {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-                then:
-                  - service: light.turn_on
-                    data:
-                      color_temp: !input profile_dimmed_color_temp
-                      brightness: !input profile_dimmed_brightness
-                      transition: !input transition_change
-                    target:
-                      !input target_lights
-                else:
-                  - service: light.turn_on
-                    data:
-                      color_temp: !input profile_dimmed_color_temp
-                      brightness: !input profile_dimmed_brightness
-                      transition: !input transition_on
-                    target:
-                      !input target_lights
+              - service: light.turn_on
+                data:
+                  color_temp: !input profile_dimmed_color_temp
+                  brightness: !input profile_dimmed_brightness
+                  transition: "{{ transition }}"
+                target: !input target_lights
       - conditions:
           - condition: state
             entity_id: !input profile_input_select
@@ -420,26 +329,12 @@ sequence:
                     entity_id: !input profile_adaptive_input_switch
                     state: "on"
                 sequence:
-                  - if:
-                      - condition: template
-                        value_template: >-
-                          {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-                    then:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_night_light_color_temp
-                          brightness: !input profile_night_light_brightness
-                          transition: !input transition_change
-                        target:
-                          !input target_lights
-                    else:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_night_light_color_temp
-                          brightness: !input profile_night_light_brightness
-                          transition: !input transition_on
-                        target:
-                          !input target_lights
+                  - service: light.turn_on
+                    data:
+                      color_temp: !input profile_night_light_color_temp
+                      brightness: !input profile_night_light_brightness
+                      transition: "{{ transition }}"
+                    target: !input target_lights
               - conditions:
                   - condition: sun
                     before: sunset
@@ -447,61 +342,21 @@ sequence:
                     before_offset: !input sun_before_offset
                     after_offset: !input sun_after_offset
                 sequence:
-                  - if:
-                      - condition: template
-                        value_template: >-
-                          {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-                    then:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_bright_color_temp
-                          brightness: !input profile_bright_brightness
-                          transition: !input transition_change
-                        target:
-                          !input target_lights
-                    else:
-                      - service: light.turn_on
-                        data: 
-                          color_temp: !input profile_bright_color_temp
-                          brightness: !input profile_bright_brightness
-                          transition: !input transition_on
-                        target:
-                          !input target_lights
+                  - service: light.turn_on
+                    data:
+                      color_temp: !input profile_bright_color_temp
+                      brightness: !input profile_bright_brightness
+                      transition: "{{ transition }}"
+                    target: !input target_lights
             default:
-              - if:
-                  - condition: template
-                    value_template: >-
-                      {{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}
-                then:
-                  - service: light.turn_on
-                    data:
-                      color_temp: !input profile_dimmed_color_temp
-                      brightness: !input profile_dimmed_brightness
-                      transition: !input transition_change
-                    target:
-                      !input target_lights
-                else:
-                  - service: light.turn_on
-                    data:
-                      color_temp: !input profile_dimmed_color_temp
-                      brightness: !input profile_dimmed_brightness
-                      transition: !input transition_on
-                    target:
-                      !input target_lights
+              - service: light.turn_on
+                data:
+                  color_temp: !input profile_dimmed_color_temp
+                  brightness: !input profile_dimmed_brightness
+                  transition: "{{ transition }}"
+                target: !input target_lights
     default:
-      - if:
-          - condition: 
-            -  "{{ expand(lights.entity_id) | selectattr('state', '==', 'on') | list | count > 0 }}"
-        then:
-          - service: light.turn_on
-            data: 
-              transition: !input transition_change
-            target:
-              !input target_lights
-        else:
-          - service: light.turn_on
-            data: 
-              transition: !input transition_change
-            target:
-              !input target_lights
-        
+      - service: light.turn_on
+        data:
+          transition: "{{ transition }}"
+        target: !input target_lights
