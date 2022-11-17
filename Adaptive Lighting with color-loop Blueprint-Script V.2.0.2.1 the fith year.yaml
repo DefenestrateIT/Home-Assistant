@@ -163,16 +163,11 @@ blueprint:
           
 variables:
   lights: !input target_lights
-  lights_on: >-
-    {% if lights.device_id is defined %} {{ is_state ( device_entities (
-    lights.device_id ) | string , 'on' ) }} {% elif lights.entity_id is
-    defined %} {{ is_state ( lights.entity_id , 'on' ) }} {% else %} {{ expand
-    ( area_entities ( lights.area_id ) ) | selectattr ( 'domain' , 'eq' ,
-    'light' ) | selectattr ( 'state' , 'eq' , 'on' ) | list | count > 0 }} {%
-    endif %}
+  entities: "{{ device_entities ( lights.device_id | default ) + area_entities ( lights.area_id | default ) + lights.entity_id | default ( [] ) }}"
+  lights_on: "{{ entities | select ( 'is_state' , 'on' ) | list | count > 0 }}"
   transition_on: !input transition_on
   transition_change: !input transition_change
-  transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {%endif%}"
+  transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {% endif %}"
 
 sequence:
   - choose:
@@ -210,21 +205,14 @@ sequence:
               transition: "{{ transition }}"
             target: !input target_lights
       - conditions:
-          - condition: state
-            entity_id: !input profile_input_select
-            state: Random
-        sequence:
-          - service: light.turn_on
-            data:
-              hs_color:
-                - "{{ range(360)|random }}"
-                - 100
-              transition: "{{ transition }}"
-            target: !input target_lights
-      - conditions:
-          - condition: state
-            entity_id: !input profile_input_select
-            state: Colour-Loop
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input profile_input_select
+                state: Colour-Loop
+              - condition: state
+                entity_id: !input profile_input_select
+                state: Random
         sequence:
           - service: light.turn_on
             data:
@@ -232,7 +220,7 @@ sequence:
                 - "{{ range(360)|random }}"
                 - 100
               brightness_pct: 100
-              transition: !input profile_colour_loop_transition_time
+              transition: "{{ transition }}"
             target: !input target_lights
           - repeat:
               while:
@@ -248,12 +236,12 @@ sequence:
                       - "{{ range(360)|random }}"
                       - 100
                     brightness_pct: 100
-                    transition: !input profile_colour_loop_transition_time
+                    transition: !input transition_change
                   target: !input target_lights
                 - delay:
                     hours: 0
                     minutes: 0
-                    seconds: !input profile_colour_loop_transition_time
+                    seconds: !input transition_change
                     milliseconds: 0
       - conditions:
           - condition: state
