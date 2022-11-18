@@ -162,9 +162,10 @@ blueprint:
           step: 1.0
           
 variables:
-  lights: !input target_lights
-  entities: "{{ device_entities ( lights.device_id | default ) + area_entities ( lights.area_id | default ) + lights.entity_id | default ( [] ) }}"
-  lights_on: "{{ entities | select ( 'is_state' , 'on' ) | list | count > 0 }}"
+  lights: !input lights
+  entities: "{{ device_entities ( lights.device_id | default ) + area_entities ( lights.area_id | default ) + [ lights.entity_id ] | default ( [] ) }}"
+  filtered: "{{ expand ( entities ) | selectattr ( 'domain' , 'eq' , 'light' ) | selectattr ( 'state' , 'eq' , 'on' ) | list | default ( [] ) }}"
+  lights_on: "{{ filtered | count > 0 }}"
   transition_on: !input transition_on
   transition_change: !input transition_change
   transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {% endif %}"
