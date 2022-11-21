@@ -163,8 +163,19 @@ blueprint:
           
 variables:
   lights: !input lights
-  entities: "{{ device_entities ( lights.device_id | default ) + area_entities ( lights.area_id | default ) + [ lights.entity_id ] | default ( [] ) }}"
-  filtered: "{{ expand ( entities ) | selectattr ( 'domain' , 'eq' , 'light' ) | selectattr ( 'state' , 'eq' , 'on' ) | list | default ( [] ) }}"
+  entities: >
+    {%- set ns = namespace(ret=[]) %}
+    {%- for key in ['device_id', 'area_id', 'entity_id'] %}
+      {%- set items = lights.get(key, [])  %}
+      {%- if items %}
+        {%- set items = [ items ] if items is string else items %}
+        {%- set filt = key.split('_') | first %}
+        {%- set items = items if filt == 'entity' else items | map(filt ~ '_entities') | sum(start=[]) %}
+        {%- set ns.ret = ns.ret + [ items ] %}
+      {%- endif %}
+    {%- endfor %}
+    {{ ns.ret | sum(start=[]) }}
+  filtered: "{{ entities | select( 'search' , '^light' ) | select('is_state', 'on') | list }}"
   lights_on: "{{ filtered | count > 0 }}"
   transition_on: !input transition_on
   transition_change: !input transition_change
