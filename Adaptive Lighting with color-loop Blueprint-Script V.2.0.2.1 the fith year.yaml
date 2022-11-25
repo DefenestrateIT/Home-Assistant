@@ -162,7 +162,7 @@ blueprint:
           step: 1.0
           
 variables:
-  lights: !input lights
+  lights: !input target_lights
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
@@ -179,7 +179,7 @@ variables:
   lights_on: "{{ filtered | count > 0 }}"
   transition_on: !input transition_on
   transition_change: !input transition_change
-  transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {% endif %}"
+  transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {%endif%}"
 
 sequence:
   - choose:
@@ -217,14 +217,21 @@ sequence:
               transition: "{{ transition }}"
             target: !input target_lights
       - conditions:
-          - condition: or
-            conditions:
-              - condition: state
-                entity_id: !input profile_input_select
-                state: Colour-Loop
-              - condition: state
-                entity_id: !input profile_input_select
-                state: Random
+          - condition: state
+            entity_id: !input profile_input_select
+            state: Random
+        sequence:
+          - service: light.turn_on
+            data:
+              hs_color:
+                - "{{ range(360)|random }}"
+                - 100
+              transition: "{{ transition }}"
+            target: !input target_lights
+      - conditions:
+          - condition: state
+            entity_id: !input profile_input_select
+            state: Colour-Loop
         sequence:
           - service: light.turn_on
             data:
@@ -232,7 +239,7 @@ sequence:
                 - "{{ range(360)|random }}"
                 - 100
               brightness_pct: 100
-              transition: "{{ transition }}"
+              transition: !input profile_colour_loop_transition_time
             target: !input target_lights
           - repeat:
               while:
@@ -248,12 +255,12 @@ sequence:
                       - "{{ range(360)|random }}"
                       - 100
                     brightness_pct: 100
-                    transition: !input transition_change
+                    transition: !input profile_colour_loop_transition_time
                   target: !input target_lights
                 - delay:
                     hours: 0
                     minutes: 0
-                    seconds: !input transition_change
+                    seconds: !input profile_colour_loop_transition_time
                     milliseconds: 0
       - conditions:
           - condition: state
