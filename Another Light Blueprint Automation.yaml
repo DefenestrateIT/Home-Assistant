@@ -277,7 +277,7 @@ action:
           - service: light.turn_off
             data:
               transition: !input transition_off
-            target: !input lights
+            target: !input target_lights
       - conditions:
           - condition: or
             conditions:
