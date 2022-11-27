@@ -6,7 +6,7 @@ blueprint:
   input:
     lights:
       name: Targeted Lights
-      description: The Lights this Script is Targeted at.
+      description: The Lights this Script is Watching.
       selector:
         target:
           entity:
