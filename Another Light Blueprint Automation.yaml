@@ -28,7 +28,7 @@ blueprint:
     system  on her birthday the 8th of Oct, and in the hope she will be inspired to
     learn how to do it for her self (As she is an old school coder, [& still wickedly
     coding] who always saying she loves programming) & so should U!"
-  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/e838db04cbfc2eb37640d78265c621d86f73ba1d/Adaptive%20Lighting%20with%20color-loop%20Blueprint-Automation%20V.2.0.2.1%20the%20fith%20year.yaml
+  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/0d434b4ab5c98489436afccdfbac77268934862e/Another%20Light%20Blueprint%20Automation.yaml
   domain: automation
 
   input:
