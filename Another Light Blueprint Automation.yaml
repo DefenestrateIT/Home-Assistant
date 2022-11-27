@@ -1,7 +1,7 @@
 blueprint:
   name: Another Light Blueprint Automation
   description:
-    "My Default Light Blueprint-Script with my take on Profiles;\n - Bright.
+    "Another Light Blueprint-Automation is my take on Light Profiles with Automations. ;\n - Bright.
     \    - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
     - Dimmed      - (For after sunset & before sunrise when i'm (still) thinking about
     bed, but I will want to be able to read the Funny pages).\n - Night-Light - (For
@@ -23,11 +23,7 @@ blueprint:
     be used with A Automation-Script, & that decides IF & WHEN too turn the Light/s
     On (by calling this script) & Off (by any means you see fit).\n Replace Another
     in the name of this script with the name of room/area/device/entity  (E.g. Office)
-    light/s, this script is intended to turn_on [for convenience].\n This Blueprint
-    is Inspired & Writen in loving annoyance to having to set up my mother; I.e. Robyn's
-    system  on her birthday the 8th of Oct, and in the hope she will be inspired to
-    learn how to do it for her self (As she is an old school coder, [& still wickedly
-    coding] who always saying she loves programming) & so should U!"
+    light/s, this script is intended to turn_on [for convenience]."
   source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/0d434b4ab5c98489436afccdfbac77268934862e/Another%20Light%20Blueprint%20Automation.yaml
   domain: automation
 
