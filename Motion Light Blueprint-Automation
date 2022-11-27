@@ -26,6 +26,20 @@ blueprint:
         entity:
           domain: input_select
           multiple: false
+    run_script:
+      name: Script
+      description: Script this automation will run to turn the lights on.
+      selector:
+        entity:
+          domain: script
+    automations_off:
+      name: Automations Off { Toggle } (Optional)
+      description: Because I like to have A global Automations off Switch.
+      default:
+      selector:
+        entity:
+          domain: input_boolean
+          multiple: false
     motion_sensor:
       name: Motion Sensor
       description: The motion sensor that triggeres this automation.
@@ -34,12 +48,6 @@ blueprint:
           domain: binary_sensor
           device_class: motion
           multiple: false
-    run_script:
-      name: Script
-      description: Script this automation will run to turn the lights on.
-      selector:
-        entity:
-          domain: script
     motion_cleared:
       name: Motion Cleared delay Time
       description: The Clear Delay Time.
@@ -77,6 +85,7 @@ variables:
     {{ ns.ret | sum(start=[]) }}
   filtered: "{{ entities | select ( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select ('is_state', 'on') | list | count > 0 }}"
+  automations_off: "{{ iif ( !input automations_off is defined , !input automations_off , false }}"
 
 trigger:
   - platform: state
@@ -98,7 +107,10 @@ trigger:
     entity_id: !input input_select_profile
     id: Light-Change
 
-condition: []
+condition: 
+  - condition: template
+    value_template: "{{ automations_off }}"
+    
 action:
   - choose:
       - conditions:
