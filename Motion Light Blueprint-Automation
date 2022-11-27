@@ -102,10 +102,9 @@ trigger:
       minutes: 15
       seconds: 0
   - platform: state
-    entity_id: !input light_switch
-    id: Light-Change
-  - platform: state
-    entity_id: !input input_select_profile
+    entity_id: 
+      - !input light_switch
+      - !input input_select_profile
     id: Light-Change
 
 condition: 
