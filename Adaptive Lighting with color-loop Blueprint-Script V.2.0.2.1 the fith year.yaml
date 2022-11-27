@@ -45,6 +45,7 @@ blueprint:
     profile_adaptive_input_switch:
       name: Profile - Adaptive - input_boolean (Toggle)
       description: The Adaptive Profile Night-Light Time Switch, is used to switch the Night-Light profile on.
+      default:
       selector:
         entity:
           domain: input_boolean
