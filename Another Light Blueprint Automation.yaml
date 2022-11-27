@@ -234,9 +234,7 @@ variables:
     {{ ns.ret | sum(start=[]) }}
   filtered: "{{ entities | select( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
-  transition_on: !input transition_on
-  transition_change: !input transition_change
-  transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {%endif%}"
+  transition: "{% if lights_on %} !input transition_change {% else %} !input transition_on {% endif %}"
   automations_off: !input automations_off
 
 trigger:
@@ -253,15 +251,12 @@ trigger:
       minutes: 15
       seconds: 0
   - platform: state
-    entity_id: !input light_switch
-    id: Light-Change
-  - platform: state
-    entity_id: !input profile_input_select
+    entity_id: 
+      - !input light_switch
+      - !input profile_input_select
     id: Light-Change
 
-condition:
-  - condition: template
-    value_template: "{{ automations_off }}"
+condition: []
 
 action:
   - choose:
