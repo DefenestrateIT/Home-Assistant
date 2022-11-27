@@ -15,6 +15,7 @@ blueprint:
     input_select_profile:
       name: Profile input_select (Dropdown) for the Lights
       description: The input_select Profile Entity to watch for change.
+      default:
       selector:
         entity:
           domain: input_select
