@@ -1,6 +1,7 @@
 blueprint:
   name: Motion Light Blueprint Automation
   description: Written as an example for "Another Light Blueprint Script".
+  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/13306e802cc49871d415b15676ad8c7fb34de431/Motion%20Light%20Blueprint-Automation
   domain: automation
 
   input:
