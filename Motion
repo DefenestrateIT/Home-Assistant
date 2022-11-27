@@ -1,0 +1,143 @@
+blueprint:
+  name: Motion Light Blueprint Automation
+  description: Written as an example for "Another Light Blueprint Script".
+  domain: automation
+
+  input:
+    lights:
+      name: Targeted Lights
+      description: The Lights this Script is Targeted at.
+      selector:
+        target:
+          entity:
+            domain: light
+    input_select_profile:
+      name: Profile input_select (Dropdown) for the Lights
+      description: The input_select Profile Entity to watch for change.
+      selector:
+        entity:
+          domain: input_select
+          multiple: false
+    light_switch:
+      name: Light Switch
+      description: On, Off, Auto 'input_select' Switch.
+      selector:
+        entity:
+          domain: input_select
+          multiple: false
+    motion_sensor:
+      name: Motion Sensor
+      description: The motion sensor that triggeres this automation.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion
+          multiple: false
+    run_script:
+      name: Script
+      description: Script this automation will run to turn the lights on.
+      selector:
+        entity:
+          domain: script
+    motion_cleared:
+      name: Motion Cleared delay Time
+      description: The Clear Delay Time.
+      default: 15
+      selector:
+        number:
+          min: 0.0
+          max: 60.0
+          mode: slider
+          step: 1.0
+    transition_off:
+      name: Turn Off Light Transition Time
+      description: The Light.Turn_Off Transition Time.
+      default: 30
+      selector:
+        number:
+          min: 0.0
+          max: 300.0
+          mode: slider
+          step: 1.0
+
+variables:
+  lights: !input lights
+  entities: >
+    {%- set ns = namespace(ret=[]) %}
+    {%- for key in ['device_id', 'area_id', 'entity_id'] %}
+      {%- set items = lights.get(key, [])  %}
+      {%- if items %}
+        {%- set items = [ items ] if items is string else items %}
+        {%- set filt = key.split('_') | first %}
+        {%- set items = items if filt == 'entity' else items | map(filt ~ '_entities') | sum(start=[]) %}
+        {%- set ns.ret = ns.ret + [ items ] %}
+      {%- endif %}
+    {%- endfor %}
+    {{ ns.ret | sum(start=[]) }}
+  filtered: "{{ entities | select ( 'search' , '^light' ) }}"
+  lights_on: "{{ filtered | select ('is_state', 'on') | list | count > 0 }}"
+
+trigger:
+  - platform: state
+    entity_id: !input motion_sensor
+    to: "on"
+    id: Motion-Detected
+  - platform: state
+    entity_id: !input motion_sensor
+    to: "off"
+    id: Motion-cleared
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+  - platform: state
+    entity_id: !input light_switch
+    id: Light-Change
+  - platform: state
+    entity_id: !input input_select_profile
+    id: Light-Change
+
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input light_switch
+                state: "Off"
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity_id: !input light_switch
+                    state: Auto
+                  - condition: trigger
+                    id: Motion-Cleared
+        sequence:
+          - service: light.turn_off
+            data: 
+              transition: !input transition_off
+            target: !input lights
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input light_switch
+                state: "On"
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity_id: !input light_switch
+                    state: Auto
+                  - condition: trigger
+                    id: Motion-Detected
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id: Light-Change
+                  - condition: template
+                    value_template: "{{ lights_on }}"
+        sequence:
+          - service: !input run_script
+            data: {}
+mode: restart
