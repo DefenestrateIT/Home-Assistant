@@ -43,6 +43,7 @@ blueprint:
     motion_sensor:
       name: Motion Sensor
       description: The motion sensor that triggeres this automation.
+      default:
       selector:
         entity:
           domain: binary_sensor
