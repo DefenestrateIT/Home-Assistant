@@ -80,6 +80,13 @@ blueprint:
           max: 60.0
           mode: slider
           step: 1.0
+    automations_off:
+      name: Automations Off ( Toggle { Optional })
+      description: Because I like to have A global Automations off Switch.
+      selector:
+        entity:
+          domain: input_boolean
+          multiple: false
     profile_circadian_bed_time:
       name: Profile - Circadian - Bed Time
       description:
@@ -234,6 +241,7 @@ variables:
   transition_on: !input transition_on
   transition_change: !input transition_change
   transition: "{% if lights_on %} {{ transition_change }} {% else %} {{ transition_on }} {%endif%}"
+  automations_off: !input automations_off
 
 trigger:
   - platform: state
@@ -255,7 +263,9 @@ trigger:
     entity_id: !input profile_input_select
     id: Light-Change
 
-condition: []
+condition:
+  - condition: template
+    value_template: "{{ automations_off }}"
 
 action:
   - choose:
