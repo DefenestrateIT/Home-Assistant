@@ -1,57 +1,60 @@
 blueprint:
   name: Motion Light Switch Blueprint Automation
   description:
-    "Another Light Blueprint-Automation is my take on Light Profiles with Automations. ;\n - Bright.
-    \    - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
-    - Dimmed      - (For after sunset & before sunrise when i'm (still) thinking about
-    bed, but I will want to be able to read the Funny pages).\n - Night-Light - (For
-    bed/sleep time, & you don't want to wake  everyone else up, but you still want
-    to see in an emergency; how to get to the Fridge)\n - Colour-Loop -  (Was to be
-    Aurora-Australis, but color-loop is easier to remember).\n - Circadian   -  (For
-    the rest of the house at night, & to get everyone in sync @ night with you).\n
-    - Adaptive    -  (This works really well with a bed/sleep input_boolean).\n -
-    Random      -  (A Sorely missed replacement to the light effect).\n - Custom      -
-    \ (Utilise this when using scenes & applying custom colour effects).\n - Flash
-    \      -  (works great in conjunction with Alarm Panel Automations).\n\n So thus,
-    will be known as; Adaptive Lighting with color-loop Blueprint-Script V.2.0.2.1
-    the fith year, from hence forth.\n (effect; Marketing/Advertising/Publicity :-D).\n\n
-    \   - A PREREQUISITE of an input_select { Dropdown } with the desired above Profile/s
-    (words) added is required. \n    - A PREREQUISITE of an input_boolean { Toggle
-    } is reqired for Adaptive Profile Night-Light to work.\n    Go to Settings > Devices
-    & Services > Helpers > Create Helper > { Dropdown } or { Toggle }.\n    & I'm
-    assuming you already have some Lights that you wanted to add.\n\n Designed to
-    be used with A Automation-Script, & that decides IF & WHEN too turn the Light/s
-    On (by calling this script) & Off (by any means you see fit).\n Replace Another
-    in the name of this script with the name of room/area/device/entity  (E.g. Office)
-    light/s, this script is intended to turn_on [for convenience]."
-  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/430b86656cea697718c28913dd2ab2413b00d409/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
-  domain: automation
+    "Motion Light Switch Blueprint Automation is my take on Light Profiles with Automations.
+    This version has the following profiles;\n
+    - Bright      - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
+    - Dimmed      - (For after sunset & before sunrise when i'm (still) thinking about bed, but I will want to be able to read the Funny pages).\n
+    - Night-Light - (For bed/sleep time, & you don't want to wake  everyone else up, but you still want to see in an emergency; how to get to the Fridge)\n
+    - Colour-Loop -  (Was to be Aurora-Australis, but color-loop is easier to remember).\n
+    - Circadian   -  (For the rest of the house at night, & to get everyone in sync @ night with you).\n
+    - Adaptive    -  (This works really well with a bed/sleep input_boolean).\n
+    - Random      -  (A Sorely missed replacement to the light effect).\n
+    - Custom      -  (Used for applying custom colour effects it only has the Transition effect).\n
+    - Flash       -  (works great in conjunction with Alarm Panel Automations).\n
+    - None        -  (Utilise this when using scenes & if you need to disable the light Service Call).\n\n
 
+    \    - A PREREQUISITE of an input_select { Dropdown } with the desired above Profile/s (words) added is required. \n
+    \    - A PREREQUISITE of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' added is required. \n
+    \    - A OPTINAL input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work.\n
+    \    - & I'm assuming you already have some Lights that you wanted to add.\n\n
+
+    Go to Settings > Devices & Services > Helpers > Create Helper > { Dropdown } &or { Toggle }.\n
+    Replace Motion in the name of this script with the name of room/area/device/entity  (E.g. Office) light/s, this script is intended to turn_on [for convenience]."
+
+  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/b12d3bc3d5afe232b8605d02f19c95b8d3b36bfd/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
+  domain: automation
   input:
     target_lights:
-      name: Targeted Lights
+      name: Targeted Lights {Required}
       description: The Lights this Script is Targeted at.
       selector:
         target:
           entity:
             domain: light
     profile_input_select:
-      name: Profile input_select (Dropdown)
-      description: The Profile the Targeted Light/s will comform to.
+      name: Profile input_select {Requird} (Dropdown)
+      description: The [PREREQUISITE] Profile "input_select" the Targeted Light/s will comform to E.g. Bright, Dimmed, Night-Light.
       selector:
         entity:
           domain: input_select
           multiple: false
     light_switch:
-      name: Light Switch
-      description: On, Off, Auto 'input_select' Switch.
+      name: Light Switch {Requird} (Dropdown)
+      description: On, Off, Auto [PREREQUISITE] "input_select" Switch.
       selector:
         entity:
           domain: input_select
           multiple: false
+    instant_switch:
+      name: Lights switch instantly
+      description: The Lights switch instantly when using the Switch (mainly for testing).
+      default: false
+      selector:
+        boolean:
     motion_sensor:
       name: Motion Sensor
-      description: The motion sensor that triggeres this automation.
+      description: The Motion Sensor that triggeres the auto Switch {above} Option (Optinal).
       default:
       selector:
         entity:
@@ -72,15 +75,15 @@ blueprint:
       name: Profile - Adaptive - input_boolean (Toggle)
       description:
         The Adaptive Profile Night-Light Time Switch, is used to switch
-        the Night-Light profile on.
+        the Night-Light profile on (Optinal).
       default:
       selector:
         entity:
           domain: input_boolean
           multiple: false
     automations_off:
-      name: Automations Off ( Toggle { Optional })
-      description: Because I like to have A global Automations off Switch.
+      name: Automations Off ( Toggle )
+      description: Because I like to have A global Automations off Switch (Optinal).
       default:
       selector:
         entity:
@@ -226,6 +229,7 @@ variables:
   transition_on: !input transition_on
   automations_off: !input automations_off
   transition_change: !input transition_change
+  profile_input_select: !input profile_input_select
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
@@ -263,8 +267,15 @@ trigger:
     id: Light-Change
 
 condition:
-  - condition: template
-    value_template: "{{ auto_off }}"
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: !input profile_input_select
+        state: "."
+      - condition: template
+        value_template: "{{ auto_off }}"
+      - condition: template
+        value_template: "{{ is_state ( profile_input_select , none ) }}"
 
 action:
   - choose:
@@ -307,6 +318,18 @@ action:
                     value_template: "{{ lights_on }}"
         sequence:
           - choose:
+              - conditions:
+                  - condition: or
+                    conditions:
+                      - condition: state
+                        entity_id: input_select.office_light_profile
+                        state: "."
+                      - condition: state
+                        entity_id: input_select.office_light_profile
+                        state: None
+                      - condition: template
+                        value_template: "{{ is_state ( profile_input_select , none ) }}"
+                sequence: []
               - conditions:
                   - condition: state
                     entity_id: !input profile_input_select
@@ -491,6 +514,4 @@ action:
                 data:
                   transition: "{{ transition }}"
                 target: !input target_lights
-
 mode: restart
-
