@@ -24,6 +24,7 @@ blueprint:
 
   source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/b12d3bc3d5afe232b8605d02f19c95b8d3b36bfd/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
   domain: automation
+  
   input:
     target_lights:
       name: Targeted Lights {Required}
@@ -34,7 +35,9 @@ blueprint:
             domain: light
     profile_input_select:
       name: Profile input_select {Requird} (Dropdown)
-      description: The [PREREQUISITE] Profile "input_select" the Targeted Light/s will comform to E.g. Bright, Dimmed, Night-Light.
+      description:
+        The [PREREQUISITE] Profile "input_select" the Targeted Light/s
+        will comform to E.g. Bright, Dimmed, Night-Light.
       selector:
         entity:
           domain: input_select
@@ -46,15 +49,11 @@ blueprint:
         entity:
           domain: input_select
           multiple: false
-    instant_switch:
-      name: Lights switch instantly
-      description: The Lights switch instantly when using the Switch (mainly for testing).
-      default: false
-      selector:
-        boolean:
     motion_sensor:
       name: Motion Sensor
-      description: The Motion Sensor that triggeres the auto Switch {above} Option (Optinal).
+      description:
+        The Motion Sensor that triggeres the auto Switch {above} Option
+        (Optinal).
       default:
       selector:
         entity:
@@ -223,11 +222,19 @@ blueprint:
           max: 255.0
           mode: slider
           step: 1.0
-
+    switch_transition:
+      name: Lights switch instantly
+      description: The Lights switch instantly when using the Switch (mainly for testing).
+      default: false
+      selector:
+        boolean: {}
+        
 variables:
   lights: !input target_lights
   transition_on: !input transition_on
+  transition_off: !input transition_off
   automations_off: !input automations_off
+  switch_transition: !input switch_transition
   transition_change: !input transition_change
   profile_input_select: !input profile_input_select
   entities: >
@@ -244,9 +251,10 @@ variables:
     {{ ns.ret | sum(start=[]) }}
   filtered: "{{ entities | select( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
-  transition: "{{ [ transition_change ] if lights_on else transition_on }}"
+  instant_transition: "{{ false }}"
+  transitions: "{{ [ transition_change ] if lights_on else transition_on }}"
   auto_off: "{{ [ 'true' ] if automations_off == none else is_state ( automations_off , 'off' ) }}"
-
+  
 trigger:
   - platform: state
     entity_id: !input motion_sensor
@@ -264,20 +272,26 @@ trigger:
     entity_id:
       - !input light_switch
       - !input profile_input_select
-    id: Light-Change
-
+    id: Input-Change
+    
 condition:
-  - condition: or
+  - condition: template
+    value_template: "{{ auto_off }}"
+  - condition: not
     conditions:
-      - condition: state
-        entity_id: !input profile_input_select
-        state: "."
-      - condition: template
-        value_template: "{{ auto_off }}"
-      - condition: template
-        value_template: "{{ is_state ( profile_input_select , none ) }}"
-
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: !input profile_input_select
+            state: "."
+          - condition: template
+            value_template: "{{ is_state ( profile_input_select , none ) }}"
+            
 action:
+  - variables:
+      transition: "{{ [ 0 ] if switch_transition and trigger.id == 'Input-Change' else transitions }}"
+      transition_off: "{{ [ 0 ] if switch_transition and trigger.id == 'Input-Change' else transition_off }}"
+      
   - choose:
       - conditions:
           - condition: or
@@ -295,7 +309,7 @@ action:
         sequence:
           - service: light.turn_off
             data:
-              transition: !input transition_off
+              transition: "{{ transition_off }}"
             target: !input target_lights
       - conditions:
           - condition: or
@@ -313,7 +327,7 @@ action:
               - condition: and
                 conditions:
                   - condition: trigger
-                    id: Light-Change
+                    id: Input-Change
                   - condition: template
                     value_template: "{{ lights_on }}"
         sequence:
@@ -330,6 +344,15 @@ action:
                       - condition: template
                         value_template: "{{ is_state ( profile_input_select , none ) }}"
                 sequence: []
+              - conditions:
+                  - condition: state
+                    entity_id: !input profile_input_select
+                    state: Custom
+                sequence:
+                  - service: light.turn_on
+                    data:
+                      transition: "{{ transition }}"
+                    target: !input target_lights
               - conditions:
                   - condition: state
                     entity_id: !input profile_input_select
@@ -511,7 +534,7 @@ action:
                         target: !input target_lights
             default:
               - service: light.turn_on
-                data:
-                  transition: "{{ transition }}"
+                data: {}
                 target: !input target_lights
+                
 mode: restart
