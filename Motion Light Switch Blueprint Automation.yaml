@@ -24,7 +24,7 @@ blueprint:
     On (by calling this script) & Off (by any means you see fit).\n Replace Another
     in the name of this script with the name of room/area/device/entity  (E.g. Office)
     light/s, this script is intended to turn_on [for convenience]."
-  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/0d434b4ab5c98489436afccdfbac77268934862e/Another%20Light%20Blueprint%20Automation.yaml
+  source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/430b86656cea697718c28913dd2ab2413b00d409/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
   domain: automation
 
   input:
