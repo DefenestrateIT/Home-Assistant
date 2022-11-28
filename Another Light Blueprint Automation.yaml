@@ -49,18 +49,10 @@ blueprint:
         entity:
           domain: input_select
           multiple: false
-    profile_adaptive_input_switch:
-      name: Profile - Adaptive - input_boolean (Toggle)
-      description:
-        The Adaptive Profile Night-Light Time Switch, is used to switch
-        the Night-Light profile on.
-      selector:
-        entity:
-          domain: input_boolean
-          multiple: false
     motion_sensor:
       name: Motion Sensor
       description: The motion sensor that triggeres this automation.
+      default:
       selector:
         entity:
           domain: binary_sensor
@@ -68,7 +60,7 @@ blueprint:
           multiple: false
     motion_cleared:
       name: Motion Cleared delay Time
-      description: The Clear Delay Time.
+      description: The Clear Delay Time ( minutes ).
       default: 15
       selector:
         number:
@@ -76,9 +68,20 @@ blueprint:
           max: 60.0
           mode: slider
           step: 1.0
+    profile_adaptive_input_switch:
+      name: Profile - Adaptive - input_boolean (Toggle)
+      description:
+        The Adaptive Profile Night-Light Time Switch, is used to switch
+        the Night-Light profile on.
+      default:
+      selector:
+        entity:
+          domain: input_boolean
+          multiple: false
     automations_off:
       name: Automations Off ( Toggle { Optional })
       description: Because I like to have A global Automations off Switch.
+      default:
       selector:
         entity:
           domain: input_boolean
@@ -220,6 +223,9 @@ blueprint:
 
 variables:
   lights: !input target_lights
+  transition_on: !input transition_on
+  automations_off: !input automations_off
+  transition_change: !input transition_change
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
@@ -234,8 +240,8 @@ variables:
     {{ ns.ret | sum(start=[]) }}
   filtered: "{{ entities | select( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
-  transition: "{% if lights_on %} !input transition_change {% else %} !input transition_on {% endif %}"
-  automations_off: !input automations_off
+  transition: "{{ [ transition_change ] if lights_on else transition_on }}"
+  auto_off: "{{ [ 'true' ] if automations_off == none else is_state ( automations_off , 'off' ) }}"
 
 trigger:
   - platform: state
@@ -245,18 +251,20 @@ trigger:
   - platform: state
     entity_id: !input motion_sensor
     to: "off"
-    id: Motion-cleared
+    id: Motion-Cleared
     for:
       hours: 0
       minutes: 15
       seconds: 0
   - platform: state
-    entity_id: 
+    entity_id:
       - !input light_switch
       - !input profile_input_select
     id: Light-Change
 
-condition: []
+condition:
+  - condition: template
+    value_template: "{{ auto_off }}"
 
 action:
   - choose:
@@ -483,3 +491,6 @@ action:
                 data:
                   transition: "{{ transition }}"
                 target: !input target_lights
+
+mode: restart
+
