@@ -87,7 +87,7 @@ variables:
     {{ ns.ret | sum(start=[]) }}
   filtered: "{{ entities | select ( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select ('is_state', 'on') | list | count > 0 }}"
-  automations_off: "{{ iif ( !input automations_off is defined , !input automations_off , false }}"
+  auto_off: "{{ [ 'true' ] if automations_off == none else is_state ( automations_off , 'off' ) }}"
 
 trigger:
   - platform: state
@@ -110,7 +110,7 @@ trigger:
 
 condition: 
   - condition: template
-    value_template: "{{ automations_off }}"
+    value_template: "{{ auto_off }}"
     
 action:
   - choose:
