@@ -12,14 +12,6 @@ blueprint:
         target:
           entity:
             domain: light
-    input_select_profile:
-      name: Profile input_select (Dropdown) for the Lights
-      description: The input_select Profile Entity to watch for change.
-      default:
-      selector:
-        entity:
-          domain: input_select
-          multiple: false
     light_switch:
       name: Light Switch
       description: On, Off, Auto 'input_select' Switch.
@@ -33,6 +25,14 @@ blueprint:
       selector:
         entity:
           domain: script
+    input_select_profile:
+      name: Profile input_select (Dropdown) for the Lights
+      description: The input_select Profile Entity to watch for change (Optinal).
+      default:
+      selector:
+        entity:
+          domain: input_select
+          multiple: false
     automations_off:
       name: Automations Off { Toggle } (Optional)
       description: Because I like to have A global Automations off Switch.
@@ -43,7 +43,7 @@ blueprint:
           multiple: false
     motion_sensor:
       name: Motion Sensor
-      description: The motion sensor that triggeres this automation.
+      description: The motion sensor that triggeres this automation (Optinal).
       default:
       selector:
         entity:
