@@ -73,6 +73,7 @@ blueprint:
 
 variables:
   lights: !input lights
+  automations_off: !input automations_off
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
