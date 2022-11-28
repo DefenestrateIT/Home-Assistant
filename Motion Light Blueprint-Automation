@@ -35,7 +35,7 @@ blueprint:
           multiple: false
     automations_off:
       name: Automations Off { Toggle } (Optional)
-      description: Because I like to have A global Automations off Switch.
+      description: Because I like to have A global Automations off Switch (Optinal).
       default:
       selector:
         entity:
