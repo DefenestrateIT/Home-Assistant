@@ -33,7 +33,7 @@ blueprint:
         target:
           entity:
             domain: light
-    profile_input_select:
+    input_select_profile:
       name: Profile input_select {Requird} (Dropdown)
       description:
         The [PREREQUISITE] Profile "input_select" the Targeted Light/s
@@ -42,7 +42,7 @@ blueprint:
         entity:
           domain: input_select
           multiple: false
-    light_switch:
+    input_select_switch:
       name: Light Switch {Requird} (Dropdown)
       description: On, Off, Auto [PREREQUISITE] "input_select" Switch.
       selector:
@@ -222,7 +222,7 @@ blueprint:
           max: 255.0
           mode: slider
           step: 1.0
-    switch_transition:
+    transition_switch:
       name: Lights switch instantly
       description: The Lights switch instantly when using the Switch (mainly for testing).
       default: false
@@ -234,9 +234,9 @@ variables:
   transition_on: !input transition_on
   transition_off: !input transition_off
   automations_off: !input automations_off
-  switch_transition: !input switch_transition
+  transition_switch: !input transition_switch
   transition_change: !input transition_change
-  profile_input_select: !input profile_input_select
+  input_select_profile: !input input_select_profile
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
@@ -251,7 +251,6 @@ variables:
     {{ ns.ret | sum(start=[]) }}
   filtered: "{{ entities | select( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
-  instant_transition: "{{ false }}"
   transitions: "{{ [ transition_change ] if lights_on else transition_on }}"
   auto_off: "{{ [ 'true' ] if automations_off == none else is_state ( automations_off , 'off' ) }}"
   
@@ -270,8 +269,8 @@ trigger:
       seconds: 0
   - platform: state
     entity_id:
-      - !input light_switch
-      - !input profile_input_select
+      - !input input_select_switch
+      - !input input_select_profile
     id: Input-Change
     
 condition:
@@ -282,27 +281,26 @@ condition:
       - condition: or
         conditions:
           - condition: state
-            entity_id: !input profile_input_select
+            entity_id: !input input_select_profile
             state: "."
           - condition: template
-            value_template: "{{ is_state ( profile_input_select , none ) }}"
+            value_template: "{{ is_state ( input_select_profile , none ) }}"
             
 action:
   - variables:
-      transition: "{{ [ 0 ] if switch_transition and trigger.id == 'Input-Change' else transitions }}"
-      transition_off: "{{ [ 0 ] if switch_transition and trigger.id == 'Input-Change' else transition_off }}"
-      
+      transition: "{{ [ 0 ] if transition_switch and trigger.id == 'Input-Change' else transitions }}"
+      transition_off: "{{ [ 0 ] if transition_switch and trigger.id == 'Input-Change' else transition_off }}"
   - choose:
       - conditions:
           - condition: or
             conditions:
               - condition: state
-                entity_id: !input light_switch
+                entity_id: !input input_select_switch
                 state: "Off"
               - condition: and
                 conditions:
                   - condition: state
-                    entity_id: !input light_switch
+                    entity_id: !input input_select_switch
                     state: Auto
                   - condition: trigger
                     id: Motion-Cleared
@@ -315,12 +313,12 @@ action:
           - condition: or
             conditions:
               - condition: state
-                entity_id: !input light_switch
+                entity_id: !input input_select_switch
                 state: "On"
               - condition: and
                 conditions:
                   - condition: state
-                    entity_id: !input light_switch
+                    entity_id: !input input_select_switch
                     state: Auto
                   - condition: trigger
                     id: Motion-Detected
@@ -342,11 +340,11 @@ action:
                         entity_id: input_select.office_light_profile
                         state: None
                       - condition: template
-                        value_template: "{{ is_state ( profile_input_select , none ) }}"
+                        value_template: "{{ is_state ( input_select_profile , none ) }}"
                 sequence: []
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Custom
                 sequence:
                   - service: light.turn_on
@@ -355,7 +353,7 @@ action:
                     target: !input target_lights
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Bright
                 sequence:
                   - service: light.turn_on
@@ -366,7 +364,7 @@ action:
                     target: !input target_lights
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Dimmed
                 sequence:
                   - service: light.turn_on
@@ -377,7 +375,7 @@ action:
                     target: !input target_lights
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Night-Light
                 sequence:
                   - service: light.turn_on
@@ -388,7 +386,7 @@ action:
                     target: !input target_lights
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Random
                 sequence:
                   - service: light.turn_on
@@ -400,7 +398,7 @@ action:
                     target: !input target_lights
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Colour-Loop
                 sequence:
                   - service: light.turn_on
@@ -416,7 +414,7 @@ action:
                         - condition: template
                           value_template: "{{ lights_on }}"
                         - condition: state
-                          entity_id: !input profile_input_select
+                          entity_id: !input input_select_profile
                           state: Colour-Loop
                       sequence:
                         - service: light.turn_on
@@ -434,7 +432,7 @@ action:
                             milliseconds: 0
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Flash
                 sequence:
                   - service: light.turn_on
@@ -446,7 +444,7 @@ action:
                         - condition: template
                           value_template: "{{ lights_on }}"
                         - condition: state
-                          entity_id: !input profile_input_select
+                          entity_id: !input input_select_profile
                           state: Flash
                       sequence:
                         - service: light.turn_on
@@ -460,7 +458,7 @@ action:
                             milliseconds: 0
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Circadian
                 sequence:
                   - choose:
@@ -497,7 +495,7 @@ action:
                         target: !input target_lights
               - conditions:
                   - condition: state
-                    entity_id: !input profile_input_select
+                    entity_id: !input input_select_profile
                     state: Adaptive
                 sequence:
                   - choose:
@@ -538,3 +536,4 @@ action:
                 target: !input target_lights
                 
 mode: restart
+
