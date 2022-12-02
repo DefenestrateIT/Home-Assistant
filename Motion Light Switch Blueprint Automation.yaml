@@ -1,12 +1,11 @@
 blueprint:
-  name: Optinal_Motion Light Switch Blueprint Automation
-  description: "# Optinal_Motion Light Switch Blueprint Automation\n
-    Is my take on Light Profiles with Automations V.1.∞
-    This version has the following profiles;\n
+  name: Optional_Motion Light Switch Blueprint Automation
+  description: "# Optional_Motion Light Switch Blueprint Automation V.1.2\n
+    Is my take on Light Profiles with Automations. This version has the following profiles;\n
     - Bright      - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
     - Dimmed      - (For after sunset & before sunrise when i'm (still) thinking about bed, but I will want to be able to read the Funny pages).\n
     - Night-Light - (For bed/sleep time, & you don't want to wake  everyone else up, but you still want to see in an emergency; how to get to the Fridge)\n
-    - Colour-Loop -  (Was to be Aurora-Australis, but color-loop is easier to remember).\n
+    - Colour-Loop -  (Was to be Aurora-Australis, but colour-loop is easier to remember).\n
     - Circadian   -  (For the rest of the house at night, & to get everyone in sync @ night with you).\n
     - Adaptive    -  (This works really well with a bed/sleep input_boolean).\n
     - Random      -  (A Sorely missed replacement to the light effect).\n
@@ -14,36 +13,36 @@ blueprint:
     - Flash       -  (works great in conjunction with Alarm Panel Automations).\n
     - None        -  (Utilise this when using scenes & if you need to disable the light Service Call).\n
     - '.'         -  (for advanced users to halt script).\n\n
-    \    - A PREREQUISITE of an input_select { Dropdown } with the desired above Profile/s (words) added is required {recomend one for each instance of this Automation}. \n
-    \    - A PREREQUISITE of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' ( 'Auto' if you include a motion sensor ) added is required {recomend one for each instance of this Automation}. \n
-    \    - A OPTINAL input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work {recomend just the one, that will do}.\n
-    \    - A OPTINAL binary_sensor, Device_class: motion. Is Available for the 'Auto' Switch feature {or atleast I am trying to make it so}.\n
+    \    - A PREREQUISITE of an input_select { Dropdown } with the desired above Profile/s (words) added is required { recommend one for each instance of this Automation }. \n
+    \    - A PREREQUISITE of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' ( 'Auto' if you include a motion sensor ) added is required { recommend one for each instance of this Automation }. \n
+    \    - A OPTIONAL input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work { recommend just the one, that will do }.\n
+    \    - A OPTIONAL binary_sensor, Device_class: motion. Is Available for the 'Auto' Switch feature { or at-least I am trying to make it so }.\n
     \    - & I'm assuming you already have some Lights that you wanted to add.\n\n
     Go to Settings > Devices & Services > Helpers > Create Helper > { Dropdown } &or { Toggle }.\n
-    Replace 'Optinal_Motion' in the name of this script with the name of room/area/device/entity  (E.g. Office) light/s, this script is intended to turn_on [for convenience]."
+    Replace 'Optional_Motion' in the name of this script with the name of room/area/device/entity  ( E.g. Office ) light/s, this script is intended to turn_on [for convenience]."
 
   source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/b12d3bc3d5afe232b8605d02f19c95b8d3b36bfd/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
   domain: automation
 
   input:
     target_lights:
-      name: Targeted Lights {Required}
+      name: Targeted Lights { Required }
       description: The Lights this Script is Targeted at.
       selector:
         target:
           entity:
             domain: light
     input_select_profile:
-      name: Profile input_select {Requird} (Dropdown)
+      name: Profile input_select { Required } ( Dropdown )
       description:
         The [PREREQUISITE] Profile "input_select" the Targeted Light/s
-        will comform to E.g. Bright, Dimmed, Night-Light.
+        will conform to E.g. Bright, Dimmed, Night-Light.
       selector:
         entity:
           domain: input_select
           multiple: false
     input_select_switch:
-      name: Light Switch {Requird} (Dropdown)
+      name: Light Switch { Required } ( Dropdown )
       description: On, Off, Auto [PREREQUISITE] "input_select" Switch.
       selector:
         entity:
@@ -52,8 +51,8 @@ blueprint:
     motion_sensor:
       name: Motion Sensor
       description:
-        The Motion Sensor that triggeres the auto Switch {above} Option
-        (Optinal).
+        The Motion Sensor that trigger's the auto Switch { above } Option
+        (Optional).
       default:
       selector:
         entity:
@@ -71,18 +70,18 @@ blueprint:
           mode: slider
           step: 1.0
     profile_adaptive_input_switch:
-      name: Profile - Adaptive - input_boolean (Toggle)
+      name: Profile - Adaptive - input_boolean { Toggle }
       description:
         The Adaptive Profile Night-Light Time Switch, is used to switch
-        the Night-Light profile on (Optinal).
+        the Night-Light profile on ( Optional ).
       default:
       selector:
         entity:
           domain: input_boolean
           multiple: false
     automations_off:
-      name: Automations Off ( Toggle )
-      description: Because I like to have A global Automations off Switch (Optinal).
+      name: Automations Off { Toggle }
+      description: Because I like to have A global Automations off Switch ( Optional ).
       default:
       selector:
         entity:
@@ -174,9 +173,9 @@ blueprint:
       default: "-1:00:00"
       selector:
         time: {}
-    profile_bright_color_temp:
-      name: Profile - Bright - Colour Tempature
-      description: The Bright Profile light Colour-Tempature.
+    profile_bright_colour_temp:
+      name: Profile - Bright - Colour Temperature
+      description: The Bright Profile light Colour-Temperature.
       default: 153
       selector:
         color_temp: {}
@@ -190,9 +189,9 @@ blueprint:
           max: 255.0
           mode: slider
           step: 1.0
-    profile_dimmed_color_temp:
-      name: Profile - Dimmed - Colour Tempature
-      description: The Dimmed Profile light Colour-Tempature.
+    profile_dimmed_colour_temp:
+      name: Profile - Dimmed - Colour Temperature
+      description: The Dimmed Profile light Colour-Temperature.
       default: 400
       selector:
         color_temp: {}
@@ -206,9 +205,9 @@ blueprint:
           max: 255.0
           mode: slider
           step: 1.0
-    profile_night_light_color_temp:
-      name: Profile - Night Light - Colour Tempature
-      description: The Night Light Profile light Colour-Tempature.
+    profile_night_light_colour_temp:
+      name: Profile - Night Light - Colour Temperature
+      description: The Night Light Profile light Colour-Temperature.
       default: 500
       selector:
         color_temp: {}
@@ -241,11 +240,11 @@ variables:
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
-      {%- set items = lights.get(key, [])  %}
+      {%- set items = lights.get(key, [] )  %}
       {%- if items %} {#@petroUlegend#}
         {%- set items = [ items ] if items is string else items %}
         {%- set filt = key.split('_') | first %}
-        {%- set items = items if filt == 'entity' else items | map(filt ~ '_entities') | sum(start=[]) %}
+        {%- set items = items if filt == 'entity' else items | map(filt ~ '_entities') | sum ( start = [] ) %}
         {%- set ns.ret = ns.ret + [ items ] %}
       {%- endif %}
     {%- endfor %}
@@ -253,16 +252,19 @@ variables:
   filtered: "{{ entities | select( 'search' , '^light' ) }}"
   lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
   transitions: "{{ [ transition_change ] if lights_on else transition_on }}"
-  auto_off: "{{ [ 'true' ] if automations_off == none else is_state ( automations_off , 'off' ) }}"
 
 trigger_variables:
   motion_sensor: !input motion_sensor
+  profile_adaptive_input_switch: !input profile_adaptive_input_switch
 
 trigger:
   - platform: state
     entity_id:
       - !input input_select_switch
       - !input input_select_profile
+    id: Input-Change
+  - platform: template
+    value_template: "{{ states ( profile_adaptive_input_switch ) }}"
     id: Input-Change
   - platform: template
     value_template: "{{ is_state ( motion_sensor , 'on' ) }}"
@@ -277,7 +279,7 @@ trigger:
 
 condition:
   - condition: template
-    value_template: "{{ auto_off }}"
+    value_template: "{{ [ 'true' ] if is_state ( automations_off , none ) else is_state ( automations_off , 'off' ) }}"
   - condition: not
     conditions:
       - condition: or
@@ -290,8 +292,8 @@ condition:
 
 action:
   - variables:
-      transition: "{{ [ 0 ] if transition_override and trigger.id == 'Input-Change' else transitions }}"
-      transition_off: "{{ [ 0 ] if transition_override and trigger.id == 'Input-Change' else transition_off }}"
+      transition: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transitions }}"
+      transition_off: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transition_off }}"
 
   - choose:
       - conditions:
@@ -325,7 +327,7 @@ action:
                     entity_id: !input input_select_switch
                     state: Auto
                   - condition: template
-                    value_template: "{{ is_state ( trigger.id , 'Motion-Detected' ) }}"
+                    value_template: "{{ is_state ( trigger.id , 'Motion-Detected' ) or lights_on }}"
 
               - condition: and
                 conditions:
@@ -363,7 +365,7 @@ action:
                 sequence:
                   - service: light.turn_on
                     data:
-                      color_temp: !input profile_bright_color_temp
+                      color_temp: !input profile_bright_colour_temp
                       brightness: !input profile_bright_brightness
                       transition: "{{ transition }}"
                     target: !input target_lights
@@ -374,7 +376,7 @@ action:
                 sequence:
                   - service: light.turn_on
                     data:
-                      color_temp: !input profile_dimmed_color_temp
+                      color_temp: !input profile_dimmed_colour_temp
                       brightness: !input profile_dimmed_brightness
                       transition: "{{ transition }}"
                     target: !input target_lights
@@ -385,7 +387,7 @@ action:
                 sequence:
                   - service: light.turn_on
                     data:
-                      color_temp: !input profile_night_light_color_temp
+                      color_temp: !input profile_night_light_colour_temp
                       brightness: !input profile_night_light_brightness
                       transition: "{{ transition }}"
                     target: !input target_lights
@@ -474,7 +476,7 @@ action:
                         sequence:
                           - service: light.turn_on
                             data:
-                              color_temp: !input profile_night_light_color_temp
+                              color_temp: !input profile_night_light_colour_temp
                               brightness: !input profile_night_light_brightness
                               transition: "{{ transition }}"
                             target: !input target_lights
@@ -487,14 +489,14 @@ action:
                         sequence:
                           - service: light.turn_on
                             data:
-                              color_temp: !input profile_bright_color_temp
+                              color_temp: !input profile_bright_colour_temp
                               brightness: !input profile_bright_brightness
                               transition: "{{ transition }}"
                             target: !input target_lights
                     default:
                       - service: light.turn_on
                         data:
-                          color_temp: !input profile_dimmed_color_temp
+                          color_temp: !input profile_dimmed_colour_temp
                           brightness: !input profile_dimmed_brightness
                           transition: "{{ transition }}"
                         target: !input target_lights
@@ -505,13 +507,12 @@ action:
                 sequence:
                   - choose:
                       - conditions:
-                          - condition: state
-                            entity_id: !input profile_adaptive_input_switch
-                            state: "on"
+                          - condition: template
+                            value_template: "{{ false if profile_adaptive_input_switch is  none or is_state ( profile_adaptive_input_switch , 'off' ) else true }}"
                         sequence:
                           - service: light.turn_on
                             data:
-                              color_temp: !input profile_night_light_color_temp
+                              color_temp: !input profile_night_light_colour_temp
                               brightness: !input profile_night_light_brightness
                               transition: "{{ transition }}"
                             target: !input target_lights
@@ -524,14 +525,14 @@ action:
                         sequence:
                           - service: light.turn_on
                             data:
-                              color_temp: !input profile_bright_color_temp
+                              color_temp: !input profile_bright_colour_temp
                               brightness: !input profile_bright_brightness
                               transition: "{{ transition }}"
                             target: !input target_lights
                     default:
                       - service: light.turn_on
                         data:
-                          color_temp: !input profile_dimmed_color_temp
+                          color_temp: !input profile_dimmed_colour_temp
                           brightness: !input profile_dimmed_brightness
                           transition: "{{ transition }}"
                         target: !input target_lights
