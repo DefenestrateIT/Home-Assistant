@@ -1,7 +1,7 @@
 blueprint:
-  name: Motion Light Switch Blueprint Automation
-  description:
-    "Motion Light Switch Blueprint Automation is my take on Light Profiles with Automations.
+  name: Optinal_Motion Light Switch Blueprint Automation
+  description: "# Optinal_Motion Light Switch Blueprint Automation\n
+    Is my take on Light Profiles with Automations V.1.∞
     This version has the following profiles;\n
     - Bright      - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
     - Dimmed      - (For after sunset & before sunrise when i'm (still) thinking about bed, but I will want to be able to read the Funny pages).\n
@@ -10,21 +10,21 @@ blueprint:
     - Circadian   -  (For the rest of the house at night, & to get everyone in sync @ night with you).\n
     - Adaptive    -  (This works really well with a bed/sleep input_boolean).\n
     - Random      -  (A Sorely missed replacement to the light effect).\n
-    - Custom      -  (Used for applying custom colour effects it only has the Transition effect).\n
+    - Custom      -  (Used for applying custom colour effects, it only has the Transition effect).\n
     - Flash       -  (works great in conjunction with Alarm Panel Automations).\n
-    - None        -  (Utilise this when using scenes & if you need to disable the light Service Call).\n\n
-
-    \    - A PREREQUISITE of an input_select { Dropdown } with the desired above Profile/s (words) added is required. \n
-    \    - A PREREQUISITE of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' added is required. \n
-    \    - A OPTINAL input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work.\n
+    - None        -  (Utilise this when using scenes & if you need to disable the light Service Call).\n
+    - '.'         -  (for advanced users to halt script).\n\n
+    \    - A PREREQUISITE of an input_select { Dropdown } with the desired above Profile/s (words) added is required {recomend one for each instance of this Automation}. \n
+    \    - A PREREQUISITE of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' ( 'Auto' if you include a motion sensor ) added is required {recomend one for each instance of this Automation}. \n
+    \    - A OPTINAL input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work {recomend just the one, that will do}.\n
+    \    - A OPTINAL binary_sensor, Device_class: motion. Is Available for the 'Auto' Switch feature {or atleast I am trying to make it so}.\n
     \    - & I'm assuming you already have some Lights that you wanted to add.\n\n
-
     Go to Settings > Devices & Services > Helpers > Create Helper > { Dropdown } &or { Toggle }.\n
-    Replace Motion in the name of this script with the name of room/area/device/entity  (E.g. Office) light/s, this script is intended to turn_on [for convenience]."
+    Replace 'Optinal_Motion' in the name of this script with the name of room/area/device/entity  (E.g. Office) light/s, this script is intended to turn_on [for convenience]."
 
   source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/b12d3bc3d5afe232b8605d02f19c95b8d3b36bfd/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
   domain: automation
-  
+
   input:
     target_lights:
       name: Targeted Lights {Required}
@@ -67,7 +67,7 @@ blueprint:
       selector:
         number:
           min: 0.0
-          max: 60.0
+          max: 99.0
           mode: slider
           step: 1.0
     profile_adaptive_input_switch:
@@ -222,26 +222,27 @@ blueprint:
           max: 255.0
           mode: slider
           step: 1.0
-    transition_switch:
+    transition_override:
       name: Lights switch instantly
       description: The Lights switch instantly when using the Switch (mainly for testing).
       default: false
       selector:
         boolean: {}
-        
+
 variables:
+  version: "Hello World"
   lights: !input target_lights
   transition_on: !input transition_on
   transition_off: !input transition_off
   automations_off: !input automations_off
-  transition_switch: !input transition_switch
   transition_change: !input transition_change
+  transition_override: !input transition_override
   input_select_profile: !input input_select_profile
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
       {%- set items = lights.get(key, [])  %}
-      {%- if items %}
+      {%- if items %} {#@petroUlegend#}
         {%- set items = [ items ] if items is string else items %}
         {%- set filt = key.split('_') | first %}
         {%- set items = items if filt == 'entity' else items | map(filt ~ '_entities') | sum(start=[]) %}
@@ -253,26 +254,27 @@ variables:
   lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
   transitions: "{{ [ transition_change ] if lights_on else transition_on }}"
   auto_off: "{{ [ 'true' ] if automations_off == none else is_state ( automations_off , 'off' ) }}"
-  
+
+trigger_variables:
+  motion_sensor: !input motion_sensor
+
 trigger:
-  - platform: state
-    entity_id: !input motion_sensor
-    to: "on"
-    id: Motion-Detected
-  - platform: state
-    entity_id: !input motion_sensor
-    to: "off"
-    id: Motion-Cleared
-    for:
-      hours: 0
-      minutes: 15
-      seconds: 0
   - platform: state
     entity_id:
       - !input input_select_switch
       - !input input_select_profile
     id: Input-Change
-    
+  - platform: template
+    value_template: "{{ is_state ( motion_sensor , 'on' ) }}"
+    id: Motion-Detected
+  - platform: template
+    value_template: "{{ is_state ( motion_sensor , 'off' ) }}"
+    id: Motion-Cleared
+    for:
+      hours: 0
+      minutes: !input motion_cleared
+      seconds: 0
+
 condition:
   - condition: template
     value_template: "{{ auto_off }}"
@@ -285,11 +287,12 @@ condition:
             state: "."
           - condition: template
             value_template: "{{ is_state ( input_select_profile , none ) }}"
-            
+
 action:
   - variables:
-      transition: "{{ [ 0 ] if transition_switch and trigger.id == 'Input-Change' else transitions }}"
-      transition_off: "{{ [ 0 ] if transition_switch and trigger.id == 'Input-Change' else transition_off }}"
+      transition: "{{ [ 0 ] if transition_override and trigger.id == 'Input-Change' else transitions }}"
+      transition_off: "{{ [ 0 ] if transition_override and trigger.id == 'Input-Change' else transition_off }}"
+
   - choose:
       - conditions:
           - condition: or
@@ -302,8 +305,9 @@ action:
                   - condition: state
                     entity_id: !input input_select_switch
                     state: Auto
-                  - condition: trigger
-                    id: Motion-Cleared
+                  - condition: template
+                    value_template: "{{ is_state ( trigger.id , 'Motion-Cleared' ) }}"
+
         sequence:
           - service: light.turn_off
             data:
@@ -320,8 +324,9 @@ action:
                   - condition: state
                     entity_id: !input input_select_switch
                     state: Auto
-                  - condition: trigger
-                    id: Motion-Detected
+                  - condition: template
+                    value_template: "{{ is_state ( trigger.id , 'Motion-Detected' ) }}"
+
               - condition: and
                 conditions:
                   - condition: trigger
@@ -534,6 +539,4 @@ action:
               - service: light.turn_on
                 data: {}
                 target: !input target_lights
-                
 mode: restart
-
