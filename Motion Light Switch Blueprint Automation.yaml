@@ -102,7 +102,7 @@ blueprint:
       description:
         The Light.Turn_On Transition Time, for when a Light is off & is
         being turned on.
-      default: 0
+      default: 1
       selector:
         number:
           min: 0.0
@@ -112,7 +112,7 @@ blueprint:
     transition_off:
       name: Turn Off Light Transition Time
       description: The Light.Turn_Off Transition Time.
-      default: 30
+      default: 12
       selector:
         number:
           min: 0.0
@@ -124,7 +124,7 @@ blueprint:
       description:
         The Light.Turn_On Transition Time, is used when the lights are
         already on & the profile is being changed.
-      default: 90
+      default: 24
       selector:
         number:
           min: 0.0
@@ -250,6 +250,8 @@ variables:
 trigger_variables:
   motion_sensor: !input motion_sensor
   profile_adaptive_input_switch: !input profile_adaptive_input_switch
+  transition: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transitions }}"
+  transition_off: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transition_off }}"
 
 trigger:
   - platform: template
@@ -289,8 +291,8 @@ condition:
 
 action:
   - variables:
-      transition: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transitions }}"
-      transition_off: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transition_off }}"
+      transition: "{{ transition | float ( default = 0 ) }}"
+      transition_off: "{{ transition_off | float ( default = 0 ) }}"
 
   - choose:
       - conditions:
