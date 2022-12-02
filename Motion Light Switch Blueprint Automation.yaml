@@ -242,8 +242,8 @@ variables:
       {%- endif %}
     {%- endfor %}
     {{ ns.ret | sum(start=[]) }}
-  filtered: "{{ entities | select( 'search' , '^light' ) }}"
-  lights_on: "{{ filtered | select('is_state', 'on') | list | count > 0 }}"
+  filtered: "{{ entities | select( 'search' , '^light' ) | select('is_state', 'on') }}"
+  lights_on: "{{ filtered | list | count > 0 }}"
   transitions: "{{ [ transition_change ] if lights_on else transition_on }}"
   automations_off: !input automations_off
 
