@@ -81,6 +81,18 @@ blueprint:
         entity:
           domain: input_boolean
           multiple: false
+    sun_before_offset:
+      name: Sunrise - Offset
+      description: Offset the sunrise time.
+      default: "1:00:00"
+      selector:
+        time: {}
+    sun_after_offset:
+      name: Sunset - Offset
+      description: Offset the sunset time.
+      default: "-1:00:00"
+      selector:
+        time: {}
     profile_circadian_bed_time:
       name: Profile - Circadian - Bed Time
       description:
@@ -131,8 +143,32 @@ blueprint:
           max: 300.0
           mode: slider
           step: 1.0
-    profile_colour_loop_transition_time:
-      name: Profile - Colour Loop - Transition Time
+    transition_override:
+      name: Lights switch instantly
+      description: The Lights switch instantly when using the Switch { dropdown } (mainly for testing).
+      default: false
+      selector:
+        boolean: {}
+    random_repeat_loop:
+      name: Random Profile enters a repeat loop
+      description: The Lights will enters a repeat loop like 'Colour-Loop but random colours (A.k.A Aurora-Australis).
+      default: false
+      selector:
+        boolean: {}
+    random_transition:
+      name: Random - Profile - Transition Time
+      description:
+        The Colour Loop Profile Light.Turn_On Transition Time between colour
+        changes.
+      default: 12
+      selector:
+        number:
+          min: 1.0
+          max: 300.0
+          mode: slider
+          step: 1.0
+    colour_loop_transition:
+      name: Colour Loop - Profile - Transition Time
       description:
         The Colour Loop Profile Light.Turn_On Transition Time between colour
         changes.
@@ -143,8 +179,18 @@ blueprint:
           max: 300.0
           mode: slider
           step: 1.0
+    hue_gain:
+      name: Colour Loop - Profile - Hue Gain
+      description: The Colour Loop Hue Gain, or how much colour changes between repeat loops (recomend using number that are divisible by 2, 3 or 5 to keep cycles uniform).
+      default: 30
+      selector:
+        number:
+          min: 2.0
+          max: 120.0
+          mode: slider
+          step: 1.0
     flash_repeat:
-      name: Profile - Flash - Repeat Time
+      name: Flash - Profile - Repeat Time
       description:
         The Light.Turn_On Transition Time between Flashes (Not as good
         as i would like but uses the Flash effect to protect lights).
@@ -155,26 +201,14 @@ blueprint:
           max: 300.0
           mode: slider
           step: 1.0
-    sun_before_offset:
-      name: Sunrise - Offset
-      description: Offset the sunrise time.
-      default: "1:00:00"
-      selector:
-        time: {}
-    sun_after_offset:
-      name: Sunset - Offset
-      description: Offset the sunset time.
-      default: "-1:00:00"
-      selector:
-        time: {}
     profile_bright_colour_temp:
-      name: Profile - Bright - Colour Temperature
+      name: Bright - Profile - Colour Temperature
       description: The Bright Profile light Colour-Temperature.
       default: 153
       selector:
         color_temp: {}
     profile_bright_brightness:
-      name: Profile - Bright - brightness
+      name: Bright - Profile - brightness
       description: The Bright Profile light brightness.
       default: 255
       selector:
@@ -184,13 +218,13 @@ blueprint:
           mode: slider
           step: 1.0
     profile_dimmed_colour_temp:
-      name: Profile - Dimmed - Colour Temperature
+      name: Dimmed - Profile - Colour Temperature
       description: The Dimmed Profile light Colour-Temperature.
       default: 400
       selector:
         color_temp: {}
     profile_dimmed_brightness:
-      name: Profile - Dimmed - Brightness
+      name: Dimmed - Profile - Brightness
       description: The Dimmed Profile light brightness.
       default: 175
       selector:
@@ -200,13 +234,13 @@ blueprint:
           mode: slider
           step: 1.0
     profile_night_light_colour_temp:
-      name: Profile - Night Light - Colour Temperature
+      name: Night Light - Profile - Colour Temperature
       description: The Night Light Profile light Colour-Temperature.
       default: 500
       selector:
         color_temp: {}
     profile_night_light_brightness:
-      name: Profile - Night Light - Brightness
+      name: Night Light - Profile - Brightness
       description: The Night Light Profile light brightness.
       default: 15
       selector:
@@ -215,19 +249,22 @@ blueprint:
           max: 255.0
           mode: slider
           step: 1.0
-    transition_override:
-      name: Lights switch instantly
-      description: The Lights switch instantly when using the Switch (mainly for testing).
+    outdoor_lighting:
+      name: For Out Door Lighting
+      description: When Out Door or Natrual Lighting is sufficient (still in Beta).
       default: false
       selector:
         boolean: {}
 
 variables:
   version: "Hello World"
+  hue_gain: !input hue_gain
   lights: !input target_lights
   transition_on: !input transition_on
   transition_off: !input transition_off
+  automations_off: !input automations_off
   transition_change: !input transition_change
+  random_repeat_loop: !input random_repeat_loop
   transition_override: !input transition_override
   input_select_profile: !input input_select_profile
   entities: >
@@ -242,18 +279,24 @@ variables:
       {%- endif %}
     {%- endfor %}
     {{ ns.ret | sum(start=[]) }}
-  filtered: "{{ entities | select( 'search' , '^light' ) | select('is_state', 'on') }}"
-  lights_on: "{{ filtered | list | count > 0 }}"
-  transitions: "{{ [ transition_change ] if lights_on else transition_on }}"
-  automations_off: !input automations_off
+  filtered: "{{ entities | select( 'search' , '^light' ) | list }}"
+  lights_on: "{{ filtered | select('is_state', 'on') | list  }}"
+  lights_test: "{{ lights_on | count > 0 }}"
+  transitions: "{{  transition_change if lights_test else transition_on }}"
 
 trigger_variables:
   motion_sensor: !input motion_sensor
   profile_adaptive_input_switch: !input profile_adaptive_input_switch
-  transition: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transitions }}"
-  transition_off: "{{ [ 0 ] if transition_override and is_state ( trigger.id , 'Input-Change' ) else transition_off }}"
+  transition: "{{ 0 if transition_override and is_state ( trigger.id , 'Input-Change' ) else transitions }}"
+  transition_off: "{{ 0 if transition_override and is_state ( trigger.id , 'Input-Change' ) else transition_off }}"
 
 trigger:
+  - platform: sun
+    event: sunrise
+    offset: !input sun_after_offset
+  - platform: sun
+    event: sunset
+    offset: !input sun_before_offset
   - platform: template
     value_template: "{{ is_state ( profile_adaptive_input_switch , 'on' ) }}"
     id: Input-Change
@@ -308,7 +351,6 @@ action:
                     state: Auto
                   - condition: template
                     value_template: "{{ is_state ( trigger.id , 'Motion-Cleared' ) }}"
-
         sequence:
           - service: light.turn_off
             data:
@@ -326,14 +368,13 @@ action:
                     entity_id: !input input_select_switch
                     state: Auto
                   - condition: template
-                    value_template: "{{ is_state ( trigger.id , 'Motion-Detected' ) or lights_on }}"
-
+                    value_template: "{{ is_state ( trigger.id , 'Motion-Detected' ) or lights_test }}"
               - condition: and
                 conditions:
                   - condition: trigger
                     id: Input-Change
                   - condition: template
-                    value_template: "{{ lights_on }}"
+                    value_template: "{{ lights_test }}"
         sequence:
           - choose:
               - conditions:
@@ -395,13 +436,52 @@ action:
                     entity_id: !input input_select_profile
                     state: Random
                 sequence:
-                  - service: light.turn_on
-                    data:
-                      hs_color:
-                        - "{{ range(360)|random }}"
-                        - 100
-                      transition: "{{ transition }}"
-                    target: !input target_lights
+                  - variables:
+                      light_bulb: "{{ filtered | reject ( 'in' , integration_entities ( 'group' ) ) | list }}"
+                  - repeat:
+                      for_each: "{{ light_bulb }}"
+                      sequence:
+                        - service: light.turn_on
+                          data:
+                            hs_color:
+                              - "{{ range ( 360 ) | random }}"
+                              - "{{ range ( 80 , 101 ) | random }}"
+                            brightness_pct: 100
+                            transition: !input random_transition
+                          target:
+                            entity_id: "{{ repeat.item }}"
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: !input random_transition
+                      milliseconds: 0
+                  - repeat:
+                      sequence:
+                        - repeat:
+                            for_each: "{{ light_bulb }}"
+                            sequence:
+                              - service: light.turn_on
+                                data:
+                                  hs_color:
+                                    - "{{ range ( 360 ) | random }}"
+                                    - "{{ range ( 80 , 101 ) | random }}"
+                                  brightness_pct: 100
+                                  transition: !input random_transition
+                                target:
+                                  entity_id: "{{ repeat.item }}"
+                        - delay:
+                            hours: 0
+                            minutes: 0
+                            seconds: !input random_transition
+                            milliseconds: 0
+                      while:
+                        - condition: template
+                          value_template: "{{ lights_test }}"
+                        - condition: template
+                          value_template: "{{ random_repeat_loop }}"
+                        - condition: state
+                          entity_id: !input input_select_profile
+                          state: Random
               - conditions:
                   - condition: state
                     entity_id: !input input_select_profile
@@ -410,15 +490,15 @@ action:
                   - service: light.turn_on
                     data:
                       hs_color:
-                        - "{{ range(360)|random }}"
+                        - "{{ hue_gain }}"
                         - 100
                       brightness_pct: 100
-                      transition: !input profile_colour_loop_transition_time
+                      transition: !input colour_loop_transition
                     target: !input target_lights
                   - repeat:
                       while:
                         - condition: template
-                          value_template: "{{ lights_on }}"
+                          value_template: "{{ lights_test }}"
                         - condition: state
                           entity_id: !input input_select_profile
                           state: Colour-Loop
@@ -426,15 +506,15 @@ action:
                         - service: light.turn_on
                           data:
                             hs_color:
-                              - "{{ range(360)|random }}"
+                              - "{{ ( hue_gain + ( repeat.index * hue_gain ) ) % 360 }}"
                               - 100
                             brightness_pct: 100
-                            transition: !input profile_colour_loop_transition_time
+                            transition: !input colour_loop_transition
                           target: !input target_lights
                         - delay:
                             hours: 0
                             minutes: 0
-                            seconds: !input profile_colour_loop_transition_time
+                            seconds: !input colour_loop_transition
                             milliseconds: 0
               - conditions:
                   - condition: state
@@ -448,7 +528,7 @@ action:
                   - repeat:
                       while:
                         - condition: template
-                          value_template: "{{ lights_on }}"
+                          value_template: "{{ lights_test }}"
                         - condition: state
                           entity_id: !input input_select_profile
                           state: Flash
