@@ -1,5 +1,5 @@
 blueprint:
-  name: Optional_Motion Light Switch with Profiles Blueprint Automation
+  name: Optional_Motion Light Switch Blueprint Automation
   description: "# Optional_Motion Light Switch Blueprint Automation V 1.2\n
     Is my take on Light Profiles with Automations. This version has the following profiles;\n
     - Bright      - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
@@ -13,8 +13,8 @@ blueprint:
     - Themed      -  (Theme different rooms, with different colours).\n
     - Flash       -  (works great in conjunction with Alarm Panel Automations).\n
     - Arora       -  (My Aurora-Australis that I wanted when I first started).\n
-    - None        -  (Utilise this when using scenes & if you need to disable the light Service Call).\n
-    - '.'         -  (for advanced users to halt script).\n\n
+    - None        -  (Utilise this when using scenes & if you need to disable the light.turn_on Service Call).\n
+    - '.'         -  (for advanced users to halt this script).\n\n
     \    - A [PREREQUISITE] of an input_select { Dropdown } with the desired above Profile/s (words) added is required { recommend one for each instance of this Automation }. \n
     \    - A [PREREQUISITE] of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' ( 'Auto' if you include a motion sensor ) added is required { recommend one for each instance of this Automation }. \n
     \    - A [OPTIONAL] input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work { recommend just the one, that will do }.\n
@@ -151,12 +151,6 @@ blueprint:
       default: false
       selector:
         boolean: {}
-    random_repeat_loop:
-      name: Random Profile enters a repeat loop
-      description: The Lights will enters a repeat loop like 'Colour-Loop but random colours (A.k.A Aurora-Australis).
-      default: false
-      selector:
-        boolean: {}
     arora_transition:
       name: Arora - Profile - Transition Time
       description:
@@ -201,6 +195,12 @@ blueprint:
           max: 300.0
           mode: slider
           step: 1.0
+    light_toggle:
+      name: light.Toggle servie call, rather than use flash effect (still only in Alfa).
+      description: Be carful with this feature with lights that are not designed to flash.
+      default: false
+      selector:
+        boolean: {}
     profile_bright_colour_temp:
       name: Bright - Profile - Colour Temperature
       description: The Bright Profile light Colour-Temperature.
@@ -251,7 +251,7 @@ blueprint:
           step: 1.0
     outdoor_lighting:
       name: For Out Door Lighting
-      description: When Out Door or Natrual Lighting is sufficient (still in Beta).
+      description: When Out Door or Natrual Lighting is sufficient (still only in Alfa).
       default: false
       selector:
         boolean: {}
@@ -264,7 +264,6 @@ variables:
   transition_off: !input transition_off
   automations_off: !input automations_off
   transition_change: !input transition_change
-  random_repeat_loop: !input random_repeat_loop
   transition_override: !input transition_override
   input_select_profile: !input input_select_profile
   entities: >
