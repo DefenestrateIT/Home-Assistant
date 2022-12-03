@@ -1,5 +1,5 @@
 blueprint:
-  name: Optional_Motion Light Switch Blueprint Automation
+  name: Optional_Motion Light Switch with Profiles Blueprint Automation
   description: "# Optional_Motion Light Switch Blueprint Automation V 1.2\n
     Is my take on Light Profiles with Automations. This version has the following profiles;\n
     - Bright      - (For Day time & Events, I need to be Awake; Bright eyed & bushy tailed).\n
@@ -10,7 +10,9 @@ blueprint:
     - Adaptive    -  (This works really well with a bed/sleep input_boolean).\n
     - Random      -  (A Sorely missed replacement to the light effect).\n
     - Custom      -  (Used for applying custom colour effects, it only has the Transition effect).\n
+    - Themed      -  (Theme different rooms, with different colours).\n
     - Flash       -  (works great in conjunction with Alarm Panel Automations).\n
+    - Arora       -  (My Aurora-Australis that I wanted when I first started).\n
     - None        -  (Utilise this when using scenes & if you need to disable the light Service Call).\n
     - '.'         -  (for advanced users to halt script).\n\n
     \    - A [PREREQUISITE] of an input_select { Dropdown } with the desired above Profile/s (words) added is required { recommend one for each instance of this Automation }. \n
@@ -155,8 +157,8 @@ blueprint:
       default: false
       selector:
         boolean: {}
-    random_transition:
-      name: Random - Profile - Transition Time
+    arora_transition:
+      name: Arora - Profile - Transition Time
       description:
         The Colour Loop Profile Light.Turn_On Transition Time between colour
         changes.
@@ -167,11 +169,9 @@ blueprint:
           max: 300.0
           mode: slider
           step: 1.0
-    colour_loop_transition:
+    loop_transition:
       name: Colour Loop - Profile - Transition Time
-      description:
-        The Colour Loop Profile Light.Turn_On Transition Time between colour
-        changes.
+      description: The Colour Loop Profile Light.Turn_On Transition Time between colour changes.
       default: 3
       selector:
         number:
@@ -291,12 +291,8 @@ trigger_variables:
   transition_off: "{{ 0 if transition_override and is_state ( trigger.id , 'Input-Change' ) else transition_off }}"
 
 trigger:
-  - platform: sun
-    event: sunrise
-    offset: !input sun_after_offset
-  - platform: sun
-    event: sunset
-    offset: !input sun_before_offset
+  - platform: homeassistant
+    event: start
   - platform: template
     value_template: "{{ is_state ( profile_adaptive_input_switch , 'on' ) }}"
     id: Input-Change
@@ -306,6 +302,14 @@ trigger:
   - platform: template
     value_template: "{{ is_state ( motion_sensor , 'on' ) }}"
     id: Motion-Detected
+  - platform: sun
+    event: sunrise
+    offset: !input sun_after_offset
+    id: Sunrise
+  - platform: sun
+    event: sunset
+    offset: !input sun_before_offset
+    id: Sunset
   - platform: state
     entity_id:
       - !input input_select_switch
@@ -432,9 +436,14 @@ action:
                       transition: "{{ transition }}"
                     target: !input target_lights
               - conditions:
-                  - condition: state
-                    entity_id: !input input_select_profile
-                    state: Random
+                  - condition: or
+                    conditions:
+                      - condition: state
+                        entity_id: !input input_select_profile
+                        state: Random
+                      - condition: state
+                        entity_id: !input input_select_profile
+                        state: Arora
                 sequence:
                   - variables:
                       light_bulb: "{{ filtered | reject ( 'in' , integration_entities ( 'group' ) ) | list }}"
@@ -445,15 +454,15 @@ action:
                           data:
                             hs_color:
                               - "{{ range ( 360 ) | random }}"
-                              - "{{ range ( 80 , 101 ) | random }}"
+                              - "{{ range ( 80 , 100 ) | random }}"
                             brightness_pct: 100
-                            transition: !input random_transition
+                            transition: "{{ transition }}"
                           target:
                             entity_id: "{{ repeat.item }}"
                   - delay:
                       hours: 0
                       minutes: 0
-                      seconds: !input random_transition
+                      seconds: "{{ transition }}"
                       milliseconds: 0
                   - repeat:
                       sequence:
@@ -464,37 +473,45 @@ action:
                                 data:
                                   hs_color:
                                     - "{{ range ( 360 ) | random }}"
-                                    - "{{ range ( 80 , 101 ) | random }}"
+                                    - "{{ range ( 80 , 100 ) | random }}"
                                   brightness_pct: 100
-                                  transition: !input random_transition
+                                  transition: !input arora_transition
                                 target:
                                   entity_id: "{{ repeat.item }}"
                         - delay:
                             hours: 0
                             minutes: 0
-                            seconds: !input random_transition
+                            seconds: !input arora_transition
                             milliseconds: 0
                       while:
                         - condition: template
                           value_template: "{{ lights_test }}"
-                        - condition: template
-                          value_template: "{{ random_repeat_loop }}"
                         - condition: state
                           entity_id: !input input_select_profile
-                          state: Random
+                          state: Arora
               - conditions:
-                  - condition: state
-                    entity_id: !input input_select_profile
-                    state: Colour-Loop
+                  - condition: or
+                    conditions:
+                      - condition: state
+                        entity_id: !input input_select_profile
+                        state: Colour-Loop
+                      - condition: state
+                        entity_id: !input input_select_profile
+                        state: Themed
                 sequence:
                   - service: light.turn_on
                     data:
                       hs_color:
-                        - "{{ hue_gain }}"
-                        - 100
+                        - "{{ range ( 360 ) | random }}"
+                        - "{{ range ( 75 , 100 ) | random }}"
                       brightness_pct: 100
-                      transition: !input colour_loop_transition
+                      transition: "{{ transition }}"
                     target: !input target_lights
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: "{{ transition }}"
+                      milliseconds: 0
                   - repeat:
                       while:
                         - condition: template
@@ -509,12 +526,12 @@ action:
                               - "{{ ( hue_gain + ( repeat.index * hue_gain ) ) % 360 }}"
                               - 100
                             brightness_pct: 100
-                            transition: !input colour_loop_transition
+                            transition: !input loop_transition
                           target: !input target_lights
                         - delay:
                             hours: 0
                             minutes: 0
-                            seconds: !input colour_loop_transition
+                            seconds: !input loop_transition
                             milliseconds: 0
               - conditions:
                   - condition: state
@@ -587,7 +604,7 @@ action:
                   - choose:
                       - conditions:
                           - condition: template
-                            value_template: "{{ false if profile_adaptive_input_switch is  none or is_state ( profile_adaptive_input_switch , 'off' ) else true }}"
+                            value_template: "{{ false if profile_adaptive_input_switch is none or is_state ( profile_adaptive_input_switch , 'off' ) else true }}"
                         sequence:
                           - service: light.turn_on
                             data:
