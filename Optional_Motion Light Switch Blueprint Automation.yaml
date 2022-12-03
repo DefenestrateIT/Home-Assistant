@@ -10,18 +10,19 @@ blueprint:
     - Adaptive    -  (This works really well with a bed/sleep input_boolean).\n
     - Random      -  (A Sorely missed replacement to the light effect).\n
     - Custom      -  (Used for applying custom colour effects, it only has the Transition effect).\n
-    - Themed      -  (Theme different rooms, with different colours).\n
+    - Themed      -  (Theme different rooms, with different colours; with a change every so often).\n
     - Flash       -  (works great in conjunction with Alarm Panel Automations).\n
-    - Arora       -  (My Aurora-Australis that I wanted when I first started).\n
+    - Aurora       -  (My Aurora-Australis that I wanted when I first started).\n
     - None        -  (Utilise this when using scenes & if you need to disable the light.turn_on Service Call).\n
     - '.'         -  (for advanced users to halt this script).\n\n
     \    - A [PREREQUISITE] of an input_select { Dropdown } with the desired above Profile/s (words) added is required { recommend one for each instance of this Automation }. \n
     \    - A [PREREQUISITE] of another input_select { Dropdown } with the (words) 'On' 'Off' & 'Auto' ( 'Auto' if you include a motion sensor ) added is required { recommend one for each instance of this Automation }. \n
     \    - A [OPTIONAL] input_boolean { Toggle } is Available for Adaptive Profile Night-Light to work { recommend just the one, that will do }.\n
+    \    - A [OPTIONAL] input_boolean { Toggle } is Available for Global Automations Off { Because I like to have A global Automations off switch }.\n
     \    - A [OPTIONAL] binary_sensor, Device_class: motion. Is Available for the 'Auto' Switch feature { or at-least I am trying to make it so }.\n
     \    - & I'm assuming you already have some Lights that you wanted to add.\n\n
     Go to Settings > Devices & Services > Helpers > Create Helper > { Dropdown } &or { Toggle }.\n
-    Replace 'Optional_Motion' in the name of this script with the name of room/area/device/entity  ( E.g. Office ) light/s, this script is intended to turn_on [for convenience]."
+    Replace 'Optional_Motion' in the name of this script with the name of room/area/device/entity  ( E.g. Office ) light/s, this script is intended to turn on & off [for convenience]."
 
   source_url: https://github.com/DefenestrateIT/Home-Assistant/blob/b12d3bc3d5afe232b8605d02f19c95b8d3b36bfd/Motion%20Light%20Switch%20Blueprint%20Automation.yaml
   domain: automation
@@ -96,7 +97,7 @@ blueprint:
       selector:
         time: {}
     profile_circadian_bed_time:
-      name: Profile - Circadian - Bed Time
+      name: Circadian - Profile - Bed Time
       description:
         The Circadian Profile Night-Light Time, is used as a time to transition
         to Night Light.
@@ -104,7 +105,7 @@ blueprint:
       selector:
         time: {}
     profile_circadian_wake_up_time:
-      name: Profile - Circadian - Wake Up Time
+      name: Circadian - Profile - Wake Up Time
       description:
         The Circadian Profile Wake Up Time, is used as a time to transition
         to Dimmed or Bright Light; depending on Sunrise time.
@@ -151,8 +152,8 @@ blueprint:
       default: false
       selector:
         boolean: {}
-    arora_transition:
-      name: Arora - Profile - Transition Time
+    aurora_transition:
+      name: Aurora - Profile - Transition Time
       description:
         The Colour Loop Profile Light.Turn_On Transition Time between colour
         changes.
@@ -259,7 +260,7 @@ blueprint:
 variables:
   version: "Hello World"
   hue_gain: !input hue_gain
-  lights: !input target_lights
+  target: !input target_lights
   transition_on: !input transition_on
   transition_off: !input transition_off
   automations_off: !input automations_off
@@ -269,7 +270,7 @@ variables:
   entities: >
     {%- set ns = namespace(ret=[]) %}
     {%- for key in ['device_id', 'area_id', 'entity_id'] %}
-      {%- set items = lights.get(key, [] )  %}
+      {%- set items = target.get(key, [] )  %}
       {%- if items %} {#@petroUlegend#}
         {%- set items = [ items ] if items is string else items %}
         {%- set filt = key.split('_') | first %}
@@ -278,8 +279,8 @@ variables:
       {%- endif %}
     {%- endfor %}
     {{ ns.ret | sum(start=[]) }}
-  filtered: "{{ entities | select( 'search' , '^light' ) | list }}"
-  lights_on: "{{ filtered | select('is_state', 'on') | list  }}"
+  lights: "{{ entities | select( 'search' , '^light' ) | list }}"
+  lights_on: "{{ lights | select('is_state', 'on') | list  }}"
   lights_test: "{{ lights_on | count > 0 }}"
   transitions: "{{  transition_change if lights_test else transition_on }}"
 
@@ -442,10 +443,10 @@ action:
                         state: Random
                       - condition: state
                         entity_id: !input input_select_profile
-                        state: Arora
+                        state: Aurora
                 sequence:
                   - variables:
-                      light_bulb: "{{ filtered | reject ( 'in' , integration_entities ( 'group' ) ) | list }}"
+                      light_bulb: "{{ lights | reject ( 'in' , integration_entities ( 'group' ) ) | list }}"
                   - repeat:
                       for_each: "{{ light_bulb }}"
                       sequence:
@@ -474,20 +475,20 @@ action:
                                     - "{{ range ( 360 ) | random }}"
                                     - "{{ range ( 80 , 100 ) | random }}"
                                   brightness_pct: 100
-                                  transition: !input arora_transition
+                                  transition: !input aurora_transition
                                 target:
                                   entity_id: "{{ repeat.item }}"
                         - delay:
                             hours: 0
                             minutes: 0
-                            seconds: !input arora_transition
+                            seconds: !input aurora_transition
                             milliseconds: 0
                       while:
                         - condition: template
                           value_template: "{{ lights_test }}"
                         - condition: state
                           entity_id: !input input_select_profile
-                          state: Arora
+                          state: Aurora
               - conditions:
                   - condition: or
                     conditions:
