@@ -1,0 +1,102 @@
+blueprint:
+  domain: script
+  name: Temperature & Brightness
+  description: >
+    #Temperature & Brightness [HAssNic's] V.1\n
+    This blueprint is desghned to be part of A larger moduler script system.\n
+    I normally use this blueprint to create 'Bright', 'Dimmed' & 'Night-Light' profiles.\n
+    External varbles:
+    v_target - The variable for 'Target:'.
+    v_transition - Overrides the 'data:' variable 'Transition:'\n
+    v_brightness - The variable for 'data:' 'brightness:'' for this 'Profile' script.\n
+    v_Transition_on - the Transition time in seconds for this 'Profile' to light.turn_on.
+    v_color_temp - The variable for 'data:' Colour-Temperature (color_temp) for this 'Profile' script.\n
+    v_transition_change - the Transition time in seconds for this 'Profile' to light.turn_on when lights are already on.
+
+  input:
+    input_target_lights:
+      name: Targeted Lights
+      description: "[OPTIONAL] The Lights this Script is Targeted at for (mainly) testing purposes.\n This option should be overriden by the external variable: 'v_target'"
+      default:
+      selector:
+        target:
+          entity:
+            domain: light
+    input_color_temp:
+      name: Colour Temperature
+      description: "[OPTIONAL] The Colour-Temperature for this 'Profile'.\n Can be overriden with the 'data:' variable 'v_color_temp'"
+      default: 153
+      selector:
+        color_temp: {}
+    input_brightness:
+      name: brightness
+      description: "[OPTIONAL] The brightness for this 'Profile'.\n Can be overriden with the 'data:' variable 'v_brightness'"
+      default: 255
+      selector:
+        number:
+          min: 0.0
+          max: 255.0
+          mode: slider
+          step: 1.0
+    input_transition_on:
+      name: Transition 'on' Time
+      description: "[OPTIONAL] The Transition time in seconds for this 'Profile'.\n Can be overriden with the 'data:' variable 'v_Transition_on'"
+      default: 0
+      selector:
+        number:
+          min: 0.0
+          max: 300.0
+          mode: slider
+          step: 1.0
+    input_transition_change:
+      name: Change Light Transition Time
+      description: "[OPTIONAL] The Transition change (already on) time in seconds for this 'Profile'.\n Can be overriden with the 'data:' variable 'v_Transition_change'"
+      default: 8
+      selector:
+        number:
+          min: 0.0
+          max: 300.0
+          mode: slider
+          step: 1.0
+
+variables:
+  input_brightness: !input input_brightness
+  input_color_temp: !input input_color_temp
+  input_transition_on: !input input_transition_on
+  input_target_lights: !input input_target_lights
+  input_transition_change: !input input_transition_change
+
+  target: "{{ v_target if v_target is defined else input_target_lights }}"
+  brightness: "{{ v_brightness if v_brightness is defined else input_brightness }}"
+  color_temp: "{{ v_color_temp if v_color_temp is defined else input_color_temp }}"
+  transition_on: "{{ v_transition_on if v_transition_on is defined else input_transition_on }}"
+  transition_change: "{{ v_transition_change if v_transition_change is defined else input_transition_change }}"
+
+  entities: >
+    {%- set ns = namespace(ret=[]) %}
+    {%- for key in ['device_id', 'area_id', 'entity_id'] %}
+      {%- set items = target.get(key, [] )  %}
+      {%- if items %} {#@petroUlegend#}
+        {%- set items = [ items ] if items is string else items %}
+        {%- set filt = key.split('_') | first %}
+        {%- set items = items if filt == 'entity' else items | map(filt ~ '_entities') | sum ( start = [] ) %}
+        {%- set ns.ret = ns.ret + [ items ] %}
+      {%- endif %}
+    {%- endfor %}
+    {{ ns.ret | sum(start=[]) }}
+  expanded: "{{ [] if target.entity_id is undefined else expand ( target.entity_id ) | map ( attribute = 'entity_id' ) | list }}"
+  filtered: "{{ entities | select( 'search' , '^light' ) | list }}"
+  lights: "{{ filtered + expanded }}"
+  lights_on: "{{ lights | select('is_state', 'on') | list  }}"
+  lights_test: "{{ lights_on | count > 0 }}"
+
+  transitions: "{{ transition_change if lights_test else transition_on }}"
+  transition: "{{ 0 if transition_override and is_state ( trigger.id , 'Input-Change' ) else transitions }}"
+
+sequence:
+  - service: light.turn_on
+    data:
+      color_temp: "{{ color_temp }}"
+      brightness: "{{ brightness }}"
+      transition: "{{ transition }}"
+    target: "{{ target }}"
